@@ -1,173 +1,187 @@
 package com.veterinaire.formulaireveterinaire.serviceimpl;
 
 import com.veterinaire.formulaireveterinaire.Enums.SubscriptionStatus;
-import com.veterinaire.formulaireveterinaire.Enums.SubscriptionType;
-import com.veterinaire.formulaireveterinaire.dao.DemandeAccesRepository;
-import com.veterinaire.formulaireveterinaire.dao.SubscriptionRepository;
-import com.veterinaire.formulaireveterinaire.dao.UserRepository;
-import com.veterinaire.formulaireveterinaire.dto.UserDTO;
-import com.veterinaire.formulaireveterinaire.entity.DemandeAcces;
-import com.veterinaire.formulaireveterinaire.entity.Subscription;
+
+import com.veterinaire.formulaireveterinaire.DAO.OurVeterinaireRepository;
+import com.veterinaire.formulaireveterinaire.DAO.UserRepository;
 import com.veterinaire.formulaireveterinaire.entity.User;
 import com.veterinaire.formulaireveterinaire.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Random;
 
 @Service
 public class UserServiceImpl implements UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
-    private final SubscriptionRepository subscriptionRepository;
-    private final DemandeAccesRepository demandeAccesRepository;
+    private final OurVeterinaireRepository ourVeterinaireRepository;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    private final String excelFilePath;
 
-    public UserServiceImpl(UserRepository userRepository, SubscriptionRepository subscriptionRepository,
-                           DemandeAccesRepository demandeAccesRepository, PasswordEncoder passwordEncoder,
-                           JavaMailSender mailSender) {
+    public UserServiceImpl(UserRepository userRepository, OurVeterinaireRepository ourVeterinaireRepository ,PasswordEncoder passwordEncoder,
+                           JavaMailSender mailSender, @Value("${excel.file.path}") String excelFilePath) {
         this.userRepository = userRepository;
-        this.subscriptionRepository = subscriptionRepository;
-        this.demandeAccesRepository = demandeAccesRepository;
         this.passwordEncoder = passwordEncoder;
+        this.ourVeterinaireRepository = ourVeterinaireRepository;
         this.mailSender = mailSender;
+        this.excelFilePath = excelFilePath;
     }
 
-
     @Override
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream().map(user -> {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setNom(user.getNom());
-            userDTO.setPrenom(user.getPrenom());
-            userDTO.setEmail(user.getEmail());
-            userDTO.setPassword(user.getPassword());
-            userDTO.setNumVeterinaire(user.getNumVeterinaire());
-            userDTO.setDemandeAccesId(user.getDemandeAcces() != null ? user.getDemandeAcces().getId() : null);
-            userDTO.setAdmin(user.isAdmin());
-            userDTO.setFirstLogin(user.isFirstLogin());
-            return userDTO;
-        }).collect(Collectors.toList());
-    }
-
-
-    @Override
-    public void createUserFromDemande(Long demandeId, SubscriptionType subscriptionType) {
-        DemandeAcces demande = demandeAccesRepository.findById(demandeId)
-                .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
-
-        // Vérifier si l'utilisateur existe déjà
-        if (userRepository.findByEmail(demande.getEmail()).isPresent()) {
-            throw new RuntimeException("Un utilisateur avec cet e-mail existe déjà");
+    public String registerUser(@Valid User user) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Un utilisateur avec cet email existe déjà");
         }
-
-        // Générer un mot de passe temporaire
-        String temporaryPassword = UUID.randomUUID().toString().substring(0, 8);
-        String encodedPassword = passwordEncoder.encode(temporaryPassword);
-
-        User user = User.builder()
-                .email(demande.getEmail())
-                .password(encodedPassword)
-                .nom(demande.getNom())
-                .prenom(demande.getPrenom())
-                .numVeterinaire(demande.getNumVeterinaire())
-                .isAdmin(false)
-                .isFirstLogin(true)
-                .demandeAcces(demande)
-                .build();
-
+        if (!verifyMatricule(user.getNumMatricule())) {
+            throw new RuntimeException("Matricule non disponible");
+        }
+        String generatedPassword = generateRandomPassword();
+        user.setPassword(passwordEncoder.encode(generatedPassword));
+        user.setStatus(SubscriptionStatus.INACTIVE);
         userRepository.save(user);
-
-        LocalDateTime startDate = LocalDateTime.now();
-        LocalDateTime endDate = subscriptionType == SubscriptionType.SIX_MONTHS
-                ? startDate.plusMonths(6)
-                : startDate.plusYears(1);
-
-        Subscription subscription = Subscription.builder()
-                .user(user)
-                .subscriptionType(subscriptionType)
-                .startDate(startDate)
-                .endDate(endDate)
-                .status(SubscriptionStatus.ACTIVE)
-                .build();
-
-        subscriptionRepository.save(subscription);
-
-        // Envoyer un e-mail avec le mot de passe temporaire
-
-       // envoyerEmailMotDePasse(demande.getEmail(), temporaryPassword);
-        envoyerEmailMotDePasse(demande.getEmail(), temporaryPassword, demande.getPrenom());
-
+        sendWelcomeEmail(user.getEmail(), generatedPassword , user.getNom());
+        return "Utilisateur enregistré avec succès. Vérifiez votre email.";
     }
 
-    private void envoyerEmailMotDePasse(String email, String password, String prenom) {
-        MimeMessage message = mailSender.createMimeMessage();
-        try {
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setTo(email);
-            helper.setSubject("Bienvenue sur la plateforme Vétérinaire");
-            helper.setFrom("damino.awadi@gmail.com");
-
-            // HTML content for the email
-            String htmlContent = """
-                <!DOCTYPE html>
-                <html lang="fr">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
-                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
-                        .content { padding: 20px; background-color: #f9f9f9; border-radius: 5px; }
-                        .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
-                        .footer { margin-top: 20px; font-size: 12px; color: #777; text-align: center; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>Bienvenue sur Notre plateforme VitalNutri</h1>
-                        </div>
-                        <div class="content">
-                            <p>Bonjour %s,</p>
-                            <p>Nous sommes ravis de vous accueillir sur notre plateforme dédiée aux vétérinaires, conçue pour simplifier la gestion des consultations pour vos chats et chiens.</p>
-                            <p>Votre compte a été créé avec succès. Voici vos informations de connexion :</p>
-                            <ul>
-                                <li><strong>Email :</strong> %s</li>
-                                <li><strong>Mot de passe temporaire :</strong> %s</li>
-                            </ul>
-                            <p>Pour des raisons de sécurité, veuillez modifier votre mot de passe lors de votre première connexion.</p>
-                            <p><a href="http://localhost:8080/login" class="button">Se connecter maintenant</a></p>
-                            <p>Si vous avez des questions ou besoin d'assistance, n'hésitez pas à contacter notre équipe.</p>
-                            <p>Cordialement,<br>L'équipe VitalNutri</p>
-                        </div>
-                        <div class="footer">
-                            <p>Plateforme Vétérinaire | Support : support@veterinaire.com</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """.formatted(prenom, email, password);
-
-            helper.setText(htmlContent, true); // true indicates HTML content
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Erreur lors de l'envoi de l'email", e);
-        }
+    private boolean verifyMatricule(String numMatricule) {
+        return ourVeterinaireRepository.findByMatricule(numMatricule).isPresent();
     }
 
+    @Override
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+
+
+    private String generateRandomPassword() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+        Random random = new Random();
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            password.append(characters.charAt(random.nextInt(characters.length())));
+        }
+        return password.toString();
+    }
+
+    private void sendWelcomeEmail(String to, String password, String nom)
+    {
+        MimeMessage message = mailSender.createMimeMessage();
+
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Bienvenue sur VITALFEED – Votre espace vétérinaire est prêt");
+
+            String webPortalLink = "https://vitalfeed.tn/espace-veterinaire";
+            String appDownloadLink = "https://vitalfeed.tn/telechargement";
+
+            String htmlContent = """
+                <html>
+                <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color:#333;">
+                    <table align="center" width="100%%" cellpadding="0" cellspacing="0" style="max-width:650px; margin:auto; background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+                        <!-- Header -->
+                        <tr>
+                            <td style="background-color:#00897B; padding:25px 40px; text-align:center;">
+                                <h1 style="margin:0; color:#ffffff; font-size:24px; letter-spacing:0.5px;">VITALFEED</h1>
+                                <p style="color:#dff9f3; margin:5px 0 0; font-size:14px;">Simplifiez et modernisez votre pratique vétérinaire dès aujourd’hui</p>
+                            </td>
+                        </tr>
+
+                        <!-- Body -->
+                        <tr>
+                            <td style="padding:40px;">
+                                <h2 style="color:#2c3e50;">Bienvenue sur VITALFEED 🩺</h2>
+                                <p style="font-size:15px; line-height:1.6;">
+                                    Bonjour Dr <strong>%s</strong>,<br><br>
+                                    Nous sommes ravis de vous accueillir sur <strong>VITALFEED</strong>, votre nouvel espace digital conçu spécialement pour les vétérinaires.
+                                    Cet espace vous permet de gérer facilement vos consultations pour chiens et chats, tout en simplifiant votre quotidien professionnel.
+                                </p>
+
+                                <!-- Account Info -->
+                                <div style="margin-top:25px;">
+                                    <h3 style="color:#00897B; font-size:17px; border-bottom:2px solid #eaf0f6; padding-bottom:6px;">Vos identifiants de connexion</h3>
+                                    <table width="100%%" cellpadding="0" cellspacing="0" style="margin-top:10px; border-collapse:collapse; font-size:14px;">
+                                        <tr>
+                                            <td style="padding:8px; color:#555;">Adresse e-mail :</td>
+                                            <td style="padding:8px; text-align:right; font-weight:600;">%s</td>
+                                        </tr>
+                                        <tr style="background-color:#f9fbfd;">
+                                            <td style="padding:8px; color:#555;">Mot de passe temporaire :</td>
+                                            <td style="padding:8px; text-align:right; font-weight:600;">%s</td>
+                                        </tr>
+                                    </table>
+                                    <p style="margin-top:10px; font-size:13px; color:#777;">⚠️ Pour des raisons de sécurité, veuillez changer votre mot de passe dès votre première connexion.</p>
+                                </div>
+
+                                <!-- Links Section -->
+                                <div style="margin-top:30px;">
+                                    <h3 style="color:#00897B; font-size:17px;">Prochaines étapes :</h3>
+                                    <ol style="font-size:15px; line-height:1.8; padding-left:20px;">
+                                        <li>
+                                            Connectez-vous à votre 
+                                            <a href="%s" style="color:#00897B; text-decoration:none; font-weight:600;">Espace Vétérinaire</a>.
+                                        </li>
+                                        <li>Choisissez le type d’abonnement qui correspond à vos besoins.</li>
+                                        <li>Téléchargez et installez l’application <strong>VITALFEED Desktop</strong> pour gérer vos consultations efficacement.</li>
+                                    </ol>
+
+                                    <p style="margin-top:20px; text-align:center;">
+                                        <a href="%s" style="color:#ffffff; background-color:#00897B; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">
+                                            Télécharger l’application VITALFEED
+                                        </a>
+                                    </p>
+                                </div>
+
+                                <div style="margin-top:35px;">
+                                    <p style="font-size:15px;">Nous vous remercions de votre confiance et sommes impatients de vous accompagner dans vos consultations.</p>
+                                    <p style="margin-top:20px; font-weight:600;">Bien cordialement,</p>
+                                    <p style="margin-top:5px; color:#00897B; font-weight:700;">L’équipe VITALFEED</p>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background-color:#f0f3f7; padding:15px 30px; text-align:center; font-size:12px; color:#777;">
+                                Cet e-mail a été envoyé automatiquement, merci de ne pas y répondre directement.<br>
+                                © %s VITALFEED – Tous droits réservés.
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """.formatted(
+                    nom,                // 👈 Personalized name from formulaire
+                    to,
+                    password,
+                    webPortalLink,      // 👈 Clickable in text (Espace Vétérinaire)
+                    appDownloadLink,    // 👈 Main button (Download app)
+                    String.valueOf(LocalDate.now().getYear())
+            );
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+            logger.info("Professional welcome email sent to {}", to);
+        } catch (MessagingException e) {
+            logger.error("Failed to send welcome email to {}: {}", to, e.getMessage());
+            throw new RuntimeException("Erreur lors de l'envoi de l'e-mail de bienvenue", e);
+        }
+    }
+
+
 }

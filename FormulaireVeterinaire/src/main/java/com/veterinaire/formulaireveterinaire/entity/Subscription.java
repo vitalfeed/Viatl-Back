@@ -1,31 +1,28 @@
 package com.veterinaire.formulaireveterinaire.entity;
-import com.veterinaire.formulaireveterinaire.Enums.SubscriptionStatus;
 import com.veterinaire.formulaireveterinaire.Enums.SubscriptionType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
+
 @Entity
+@Table(name = "subscriptions")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class Subscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SubscriptionType subscriptionType; // Utilisation de l'enum
+    private SubscriptionType subscriptionType;
 
     @Column(nullable = false)
     private LocalDateTime startDate;
@@ -33,7 +30,12 @@ public class Subscription {
     @Column(nullable = false)
     private LocalDateTime endDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private SubscriptionStatus status;// "ACTIVE", "EXPIRED"
+    @Builder
+    public Subscription(Long id, User user, SubscriptionType subscriptionType, LocalDateTime startDate, LocalDateTime endDate) {
+        this.id = id;
+        this.user = user;
+        this.subscriptionType = subscriptionType;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
 }

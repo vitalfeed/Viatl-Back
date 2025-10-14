@@ -1,4 +1,4 @@
-package com.veterinaire.formulaireveterinaire.dto;
+package com.veterinaire.formulaireveterinaire.DTO;
 
 import jakarta.validation.constraints.NotBlank;
 

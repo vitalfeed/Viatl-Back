@@ -1,7 +1,6 @@
 package com.veterinaire.formulaireveterinaire.controller;
 
-import com.veterinaire.formulaireveterinaire.dao.UserRepository;
-import com.veterinaire.formulaireveterinaire.dto.ResetPasswordDTO;
+import com.veterinaire.formulaireveterinaire.DAO.UserRepository;
 import com.veterinaire.formulaireveterinaire.entity.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

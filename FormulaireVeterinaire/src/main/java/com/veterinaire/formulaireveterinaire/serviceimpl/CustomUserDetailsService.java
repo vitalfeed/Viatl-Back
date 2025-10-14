@@ -1,7 +1,7 @@
 package com.veterinaire.formulaireveterinaire.serviceimpl;
 
 
-import com.veterinaire.formulaireveterinaire.dao.UserRepository;
+import com.veterinaire.formulaireveterinaire.DAO.UserRepository;
 import com.veterinaire.formulaireveterinaire.entity.User;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

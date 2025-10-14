@@ -1,10 +1,13 @@
 package com.veterinaire.formulaireveterinaire.Config;
 
 import com.veterinaire.formulaireveterinaire.Enums.SubscriptionStatus;
-import com.veterinaire.formulaireveterinaire.dao.SubscriptionRepository;
-import com.veterinaire.formulaireveterinaire.dao.UserRepository;
+import com.veterinaire.formulaireveterinaire.DAO.SubscriptionRepository;
+import com.veterinaire.formulaireveterinaire.DAO.UserRepository;
 import com.veterinaire.formulaireveterinaire.entity.Subscription;
+import com.veterinaire.formulaireveterinaire.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,21 +22,39 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
 
-
+    private static final List<String> PERMIT_ALL_ENDPOINTS = Arrays.asList(
+            "/api/login", "/api/users/register", "/api/demandes"
+    );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        String requestURI = request.getRequestURI();
+        logger.debug("Processing request for URI: {}", requestURI);
+        logger.debug("Request method: {}", request.getMethod());
+
+        // Use startsWith to support flexible paths like query params or trailing slashes
+        boolean isPermitAll = PERMIT_ALL_ENDPOINTS.stream().anyMatch(requestURI::startsWith);
+        if (isPermitAll) {
+            logger.debug("Skipping authentication for permitAll endpoint: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         String token = null;
         String email = null;
@@ -43,8 +64,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 email = jwtUtil.extractEmail(token);
             } catch (Exception e) {
-                logger.error("Failed to extract email from token", e);
-                filterChain.doFilter(request, response);
+                logger.error("Failed to extract email from token: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Invalid token format\"}");
                 return;
             }
         }
@@ -54,19 +77,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(finalEmail);
 
             if (userDetails != null && jwtUtil.validateToken(token, finalEmail)) {
+                User user = userRepository.findByEmail(finalEmail)
+                        .orElseThrow(() -> new RuntimeException("User not found: " + finalEmail));
 
-                // 🔽 Charger le User complet (pour accéder à isAdmin)
-                com.veterinaire.formulaireveterinaire.entity.User user =
-                        userRepository.findByEmail(finalEmail)
-                                .orElseThrow(() -> new RuntimeException("User not found: " + finalEmail));
-
-                // 🔁 Si ce n'est PAS un admin, vérifier l'abonnement
-                if (!user.isAdmin()) {
+                if (!user.isAdmin() && user.getStatus() == SubscriptionStatus.ACTIVE) {
                     Subscription subscription = subscriptionRepository.findByUserEmail(finalEmail)
                             .orElseThrow(() -> new RuntimeException("No subscription found for user: " + finalEmail));
-
-                    if (subscription.getStatus() == SubscriptionStatus.EXPIRED ||
-                            subscription.getEndDate().isBefore(LocalDateTime.now())) {
+                    if (subscription.getEndDate().isBefore(LocalDateTime.now())) {
+                        logger.warn("Subscription expired for user: {}", finalEmail);
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                         response.setContentType("application/json");
                         response.getWriter().write("{\"error\": \"Subscription expired\"}");
@@ -74,14 +92,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.debug("Authenticated user: {}", finalEmail);
+            } else {
+                logger.warn("Invalid token or user details for email: {}", finalEmail);
             }
+        } else {
+            logger.debug("No token or authentication present for URI: {}", requestURI);
         }
 
         filterChain.doFilter(request, response);
     }
-
 }
