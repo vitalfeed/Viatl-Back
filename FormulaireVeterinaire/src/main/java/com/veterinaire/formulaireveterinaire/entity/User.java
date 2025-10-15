@@ -48,8 +48,6 @@ public class User {
     @Column(nullable = false)
     private boolean isAdmin = false;
 
-    @Column(nullable = false)
-    private boolean isFirstLogin = true;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

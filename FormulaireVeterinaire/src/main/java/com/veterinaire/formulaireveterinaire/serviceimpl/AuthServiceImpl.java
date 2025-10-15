@@ -54,14 +54,8 @@ public class AuthServiceImpl implements AuthService {
             String token = jwtUtil.generateToken(loginDTO.email(), user.isAdmin());
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
-            response.put("mustResetPassword", user.isFirstLogin());
-            response.put("isAdmin", user.isAdmin());
 
-            // Update first login status if needed
-            if (user.isFirstLogin()) {
-                user.setFirstLogin(false);
-                userRepository.save(user);
-            }
+            response.put("isAdmin", user.isAdmin());
 
             return response;
         } catch (AuthenticationException e) {

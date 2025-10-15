@@ -30,11 +30,11 @@ public class VeterinaireServiceImpl implements VeterinaireService {
     public VeterinaireServiceImpl(UserRepository userRepository, JavaMailSender mailSender) {
         this.userRepository = userRepository;
         this.mailSender = mailSender;
-
     }
 
     @Value("${finance.email}")
     private String financeEmail;
+
 
     @Override
     public String updateVeterinaireProfile(Long userId, MultipartFile image, SubscriptionType subscriptionType) {
@@ -75,6 +75,7 @@ public class VeterinaireServiceImpl implements VeterinaireService {
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
+            helper.setCc(financeEmail);
             helper.setSubject("Confirmation de votre abonnement – VITALFEED");
 
             String duree;
@@ -96,7 +97,6 @@ public class VeterinaireServiceImpl implements VeterinaireService {
             <html>
             <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color:#333;">
                 <table align="center" width="100%%" cellpadding="0" cellspacing="0" style="max-width:650px; margin:auto; background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-                    
                     <!-- Header -->
                     <tr>
                         <td style="background-color:#00897B; padding:25px 40px; text-align:center;">
@@ -108,8 +108,8 @@ public class VeterinaireServiceImpl implements VeterinaireService {
                     <!-- Body -->
                     <tr>
                         <td style="padding:40px;">
-                            <h2 style="color:#2c3e50;">Confirmation de votre abonnement</h2>
-                            <p style="font-size:15px; line-height:1.6;">
+                                <h2 style="color:#2c3e50;">Contactez notre service financier pour finaliser votre abonnement</h2>
+                                <p style="font-size:15px; line-height:1.6;">
                                 Bonjour Dr <strong>%s</strong>,<br><br>
                                 Nous avons bien reçu votre demande d’abonnement au plan <strong>%s</strong> sur la plateforme <strong>VITALFEED</strong>.
                             </p>
@@ -163,10 +163,6 @@ public class VeterinaireServiceImpl implements VeterinaireService {
             throw new RuntimeException("Erreur lors de l'envoi de l'e-mail de confirmation d'abonnement", e);
         }
     }
-
-
-
-
 
 }
 

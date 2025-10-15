@@ -31,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final JavaMailSender mailSender;
     private final String excelFilePath;
 
+
     public UserServiceImpl(UserRepository userRepository, OurVeterinaireRepository ourVeterinaireRepository ,PasswordEncoder passwordEncoder,
                            JavaMailSender mailSender, @Value("${excel.file.path}") String excelFilePath) {
         this.userRepository = userRepository;
@@ -127,24 +128,30 @@ public class UserServiceImpl implements UserService {
                                     <p style="margin-top:10px; font-size:13px; color:#777;">⚠️ Pour des raisons de sécurité, veuillez changer votre mot de passe dès votre première connexion.</p>
                                 </div>
 
-                                <!-- Links Section -->
-                                <div style="margin-top:30px;">
-                                    <h3 style="color:#00897B; font-size:17px;">Prochaines étapes :</h3>
-                                    <ol style="font-size:15px; line-height:1.8; padding-left:20px;">
-                                        <li>
-                                            Connectez-vous à votre 
-                                            <a href="%s" style="color:#00897B; text-decoration:none; font-weight:600;">Espace Vétérinaire</a>.
-                                        </li>
-                                        <li>Choisissez le type d’abonnement qui correspond à vos besoins.</li>
-                                        <li>Téléchargez et installez l’application <strong>VITALFEED Desktop</strong> pour gérer vos consultations efficacement.</li>
-                                    </ol>
-
-                                    <p style="margin-top:20px; text-align:center;">
-                                        <a href="%s" style="color:#ffffff; background-color:#00897B; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">
-                                            Télécharger l’application VITALFEED
-                                        </a>
-                                    </p>
-                                </div>
+                                <!-- Links Section -->\s
+                                                         <div style="margin-top:30px;">
+                                                             <h3 style="color:#00897B; font-size:17px;">Prochaines étapes :</h3>
+                                                             <ol style="font-size:15px; line-height:1.8; padding-left:20px;">
+                                                                 <li>
+                                                                     - Vous pouvez accéder à votre Espace Vétérinaire <strong>Espace Vétérinaire</strong> \s
+                                                                     <a href="%s" style="color:#00897B; text-decoration:none; font-weight:600;">Connexion</a>.
+                                                                 </li>
+                                                                 <li>
+                                                                     - Choisissez le type d’abonnement de votre choix directement depuis votre espace web.
+                                                                 </li>
+                                                                 <li>
+                                                                     - Si vous avez déjà un abonnement actif et valide, vous pouvez télécharger l’application <strong>VITALFEED</strong>\s
+                                                                     et vous connecter avec les mêmes identifiants (adresse e-mail et mot de passe).
+                                                                 </li>
+                                                             </ol>
+                    
+                                                             <p style="margin-top:20px; text-align:center;">
+                                                                 <a href="%s" style="color:#ffffff; background-color:#00897B; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">
+                                                                     Télécharger l’application VITALFEED
+                                                                 </a>
+                                                             </p>
+                                                         </div>
+                    
 
                                 <div style="margin-top:35px;">
                                     <p style="font-size:15px;">Nous vous remercions de votre confiance et sommes impatients de vous accompagner dans vos consultations.</p>

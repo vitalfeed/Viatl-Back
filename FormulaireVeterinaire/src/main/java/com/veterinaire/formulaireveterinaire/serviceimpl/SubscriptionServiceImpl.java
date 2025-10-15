@@ -178,7 +178,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(user.getEmail());
-            helper.setCc(ccEmail);
+            helper.setCc(financeEmail);
             helper.setSubject("Bienvenue et Confirmation de votre Abonnement – VITALFEED");
 
             String nom = user.getNom() != null ? user.getNom() : "Cher utilisateur";
@@ -271,7 +271,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(user.getEmail());
-            helper.setCc(ccEmail);
+            helper.setCc(financeEmail);
             helper.setSubject("Confirmation de mise à jour de votre abonnement – VITALFEED");
 
             String nom = user.getNom() != null ? user.getNom() : "Cher utilisateur";

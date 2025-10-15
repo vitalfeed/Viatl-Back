@@ -5,6 +5,7 @@ import com.veterinaire.formulaireveterinaire.DAO.SubscriptionRepository;
 import com.veterinaire.formulaireveterinaire.DAO.UserRepository;
 import com.veterinaire.formulaireveterinaire.entity.Subscription;
 import com.veterinaire.formulaireveterinaire.entity.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,6 +39,9 @@ public class ReminderScheduler {
         this.userRepository = userRepository;
         this.mailSender = mailSender;
     }
+
+    @Value("${finance.email}")
+    private String financeEmail;
 
    // @Scheduled(cron = "0 * * * * *") // Run every minute (for testing)
     @Scheduled(cron = "0 0 0 * * *") // Run daily at midnight
@@ -94,6 +98,7 @@ public class ReminderScheduler {
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(email);
+            helper.setCc(financeEmail);
             helper.setSubject("🔔 Rappel : Votre abonnement arrive à expiration");
             helper.setFrom("damino.awadi@gmail.com");
 

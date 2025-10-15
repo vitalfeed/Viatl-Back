@@ -5,7 +5,6 @@ import com.veterinaire.formulaireveterinaire.DAO.UserRepository;
 import com.veterinaire.formulaireveterinaire.entity.User;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,7 +12,7 @@ public class DataInitializer {
 
     private final UserRepository userRepository;
 
-    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -29,7 +28,7 @@ public class DataInitializer {
                 admin.setAdresseCabinet("Admin Office");
                 admin.setPassword("$2a$12$Gc3wvZUBgr5AYKpU2Y7.teXzKKvoAu04LzpDecze8iNQCkhcANy5a"); // mot de passe déjà hashé
                 admin.setAdmin(true);
-                admin.setFirstLogin(false);
+
                 admin.setStatus(SubscriptionStatus.ACTIVE);
                 userRepository.save(admin);
             }

@@ -3,8 +3,6 @@ package com.veterinaire.formulaireveterinaire.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-
-
 @Entity
 @Table(name = "our_veterinaires")
 @Data
@@ -22,4 +20,5 @@ public class OurVeterinaire {
 
     @Column(nullable = false, unique = true)
     private String matricule;
+
 }
