@@ -48,7 +48,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/reset-password").authenticated()
                         .requestMatchers("/api/users/**", "/api/demandes/all").hasRole("ADMIN")
                         .requestMatchers("/api/products/all").permitAll()
-                        .requestMatchers("/api/veterinaires/update").permitAll()
+                     //  .requestMatchers("/api/veterinaires/update").permitAll()
+                        .requestMatchers("/api/veterinaires/**").permitAll()
+
+
+
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
