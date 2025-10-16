@@ -144,6 +144,10 @@ export class ProduitsVeterinaireComponent implements OnInit {
   passwordLoading = false;
   passwordError = '';
   passwordSuccess = '';
+  
+  // User info
+  userName: string = '';
+  userFullName: string = '';
 
   constructor(
     private cartService: CartService,
@@ -173,6 +177,9 @@ export class ProduitsVeterinaireComponent implements OnInit {
   ngOnInit() {
     // Check if user is logged in
     this.checkAuthentication();
+
+    // Load user data
+    this.loadUserData();
 
     // Load products from API
     this.loadProducts();
@@ -212,6 +219,28 @@ export class ProduitsVeterinaireComponent implements OnInit {
       // Redirect to login if not authenticated
       this.router.navigate(['/login']);
     }
+  }
+
+  /**
+   * Load user data to get name
+   */
+  loadUserData(): void {
+    const userId = localStorage.getItem('userId');
+
+    if (!userId) {
+      return;
+    }
+
+    this.http.get<any>(`${environment.apiUrl}/veterinaires/${userId}`).subscribe({
+      next: (data) => {
+        this.userName = data.nom || '';
+        this.userFullName = `${data.prenom || ''} ${data.nom || ''}`.trim();
+        console.log('User full name:', this.userFullName);
+      },
+      error: (error) => {
+        console.error('Error loading user data:', error);
+      }
+    });
   }
 
   /**

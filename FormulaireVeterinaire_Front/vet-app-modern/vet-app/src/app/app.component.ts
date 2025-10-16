@@ -45,7 +45,9 @@ export class AppComponent {
   }
 
   get isAdmin(): boolean {
-    return !!localStorage.getItem('admin_token');
+    const adminToken = localStorage.getItem('admin_token');
+    const isAdminFlag = localStorage.getItem('isAdmin');
+    return !!adminToken && isAdminFlag === 'true' && this.currentRoute.includes('/admin');
   }
 
   get isEspaceProprietaire(): boolean {

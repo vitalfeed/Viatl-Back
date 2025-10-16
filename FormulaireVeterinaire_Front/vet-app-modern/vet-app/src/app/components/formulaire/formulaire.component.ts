@@ -53,19 +53,7 @@ export class FormulaireComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Check if user is authenticated
-    this.checkAuthentication();
-  }
-
-  /**
-   * Check if user is authenticated
-   */
-  checkAuthentication(): void {
-    const userToken = localStorage.getItem('user_token');
-    if (!userToken) {
-      // Redirect to login if not authenticated
-      this.router.navigate(['/login']);
-    }
+    // No authentication check - anyone can register
   }
 
   get f() { return this.demandeForm.controls; }

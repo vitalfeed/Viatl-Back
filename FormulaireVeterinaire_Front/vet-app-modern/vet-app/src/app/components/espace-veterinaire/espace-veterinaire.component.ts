@@ -31,8 +31,9 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
 
   // All available products
   allProducts: Product[] = [];
-  isLoading: boolean = true;
+  isLoading: boolean = false;
   errorMessage: string = '';
+  productsLoaded: boolean = false;
 
   // Dynamic selection of featured products
   products: Product[] = [];
@@ -47,6 +48,11 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];
   cartCount = 0;
   cartTotal = 0;
+
+  // User status and info
+  userStatus: string = '';
+  userName: string = '';
+  userFullName: string = '';
 
   features = [
     {
@@ -177,8 +183,11 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
     // Check if user is logged in
     this.checkAuthentication();
 
-    // Load products from API
-    this.loadProducts();
+    // Load user data to get status
+    this.loadUserData();
+
+    // Don't load products immediately - they will be loaded when needed
+    // this.loadProducts();
 
     // Subscribe to cart updates
     this.cartService.cartItems$.subscribe(items => {
@@ -197,6 +206,32 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
       // Redirect to login if not authenticated
       this.router.navigate(['/login']);
     }
+  }
+
+  /**
+   * Load user data to get status
+   */
+  loadUserData(): void {
+    const userId = localStorage.getItem('userId');
+
+    if (!userId) {
+      return;
+    }
+
+    this.http.get<any>(`${environment.apiUrl}/veterinaires/${userId}`).subscribe({
+      next: (data) => {
+        console.log('User data received:', data);
+        this.userStatus = data.status || '';
+        this.userName = data.nom || '';
+        this.userFullName = `${data.prenom || ''} ${data.nom || ''}`.trim();
+        console.log('User status set to:', this.userStatus);
+        console.log('User full name:', this.userFullName);
+        console.log('Should show CTA?', this.userStatus !== 'ACTIVE');
+      },
+      error: (error) => {
+        console.error('Error loading user data:', error);
+      }
+    });
   }
 
   /**
@@ -302,9 +337,14 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load products from API
+   * Load products from API - only loads once when needed
    */
   loadProducts(): void {
+    // Don't reload if already loaded
+    if (this.productsLoaded) {
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -314,6 +354,7 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
         this.products = this.getFeaturedProducts();
         this.createDisplayProducts();
         this.isLoading = false;
+        this.productsLoaded = true;
         this.startAutoSlide();
         console.log('Products loaded:', products.length);
       },
@@ -536,6 +577,9 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
   }
 
   scrollToProducts(): void {
+    // Load products when user wants to see them
+    this.loadProducts();
+    
     const productsSection = document.getElementById('products');
     if (productsSection) {
       productsSection.scrollIntoView({

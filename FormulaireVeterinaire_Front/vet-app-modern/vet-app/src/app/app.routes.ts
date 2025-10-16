@@ -12,10 +12,12 @@ import { OuTrouverNosProduitsComponent } from './components/ou-trouver-nos-produ
 import { EspaceVeterinaireComponent } from './components/espace-veterinaire/espace-veterinaire.component';
 import { ProduitsVeterinaireComponent } from './components/produits-veterinaire/produits-veterinaire.component';
 import { PanierComponent } from './components/panier/panier.component';
+import { FormulaireVetComponent } from './components/formulaire-vet/formulaire-vet.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'formulaireUser', component: FormulaireComponent },
+  { path: 'formulaireVet', component: FormulaireVetComponent },
   { path: 'confirmation', component: ConfirmationComponent },
   { path: 'login', component: LoginComponent },
   { 

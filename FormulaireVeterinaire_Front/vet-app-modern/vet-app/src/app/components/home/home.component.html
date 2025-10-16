@@ -1,44 +1,54 @@
 <!-- Section Hero -->
-<section class="bg-gradient-to-b from-white to-vet-beige py-20">
-  <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="relative bg-gradient-to-b from-white via-blue-50 to-vet-beige py-20 overflow-hidden">
+  <!-- Decorative Background Elements -->
+  <div class="absolute top-0 right-0 w-64 h-64 bg-blue-100 rounded-full opacity-20 -mr-32 -mt-32"></div>
+  <div class="absolute bottom-0 left-0 w-96 h-96 bg-green-100 rounded-full opacity-20 -ml-48 -mb-48"></div>
+  
+  <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="flex flex-col md:flex-row items-center">
       <div class="md:w-1/2 fade-in">
-        <h1 class="text-4xl md:text-5xl font-bold mb-6 text-vet-blue">
+        <div class="inline-block mb-4 px-4 py-2 bg-blue-100 rounded-full">
+          <span class="text-vet-blue font-semibold text-sm">🏥 Solution Vétérinaire Professionnelle</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-6 text-vet-blue leading-tight">
           Simplifiez la gestion de votre cabinet vétérinaire
         </h1>
-        <p class="text-xl mb-8 text-gray-600">
+        <p class="text-xl mb-8 text-gray-600 leading-relaxed">
           Une application conçue spécifiquement pour les vétérinaires spécialisés dans les soins pour chiens et chats.
         </p>
 
         <!-- Button for Veterinarians -->
         <div class="mb-8">
           <button (click)="navigateToVetSpace()"
-            class="bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg">
-            🩺 Vous êtes vétérinaire ? Découvrez votre espace
+            class="bg-vet-blue hover:bg-blue-600 text-white font-semibold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+            Vous êtes vétérinaire ? Découvrez votre espace
           </button>
         </div>
       </div>
       <div class="md:w-1/2 mt-10 md:mt-0 fade-in">
-        <div class="relative">
-          <div class="absolute inset-0 bg-vet-green/10 rounded-full transform -translate-x-4 translate-y-4"></div>
-          <svg class="w-full h-auto relative z-10" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <path d="M190 20C80 20 0 100 0 200C0 290 70 300 190 300C310 300 400 290 400 200C400 100 300 20 190 20Z"
-              fill="#3b82f6" opacity="0.1" />
-            <path d="M200 25C100 25 30 95 30 185C30 265 90 275 200 275C310 275 370 265 370 185C370 95 300 25 200 25Z"
-              fill="#10b981" opacity="0.1" />
-            <path d="M200 140C180 100 120 80 80 120C40 160 40 220 80 260C120 300 180 300 200 260" fill="none"
-              stroke="#3b82f6" stroke-width="4" />
-            <path d="M200 140C220 100 280 80 320 120C360 160 360 220 320 260C280 300 220 300 200 260" fill="none"
-              stroke="#10b981" stroke-width="4" />
-            <circle cx="200" cy="140" r="20" fill="#3b82f6" />
-            <circle cx="200" cy="260" r="20" fill="#10b981" />
-            <path d="M190 200H210M200 190V210" stroke="black" stroke-width="4" />
-          </svg>
+        <div class="relative flex justify-center items-center">
+          <div class="hero-image-wrapper">
+            <img src="assets/images/CatDog.jpg" alt="Chat et Chien" class="hero-image">
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<!-- Decorative Divider -->
+<div class="relative py-8 bg-gradient-to-b from-vet-beige to-white">
+  <div class="container max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-center">
+      <div class="flex-grow border-t-2 border-gray-300"></div>
+      <div class="mx-4 text-4xl">🐾</div>
+      <div class="flex-grow border-t-2 border-gray-300"></div>
+    </div>
+  </div>
+</div>
 
 <!-- Section Fonctionnalités -->
 <section id="fonctionnalites" class="py-20 bg-white">
@@ -99,6 +109,28 @@
     </div>
   </div>
 </section>
+
+<!-- Decorative Divider with Call-to-Action -->
+<div class="relative py-12 bg-gradient-to-r from-blue-50 via-green-50 to-blue-50">
+  <div class="container max-w-7xl mx-auto px-4">
+    <div class="text-center">
+      <div class="flex items-center justify-center mb-6">
+        <div class="flex-grow border-t-2 border-blue-300 max-w-xs"></div>
+        <div class="mx-6">
+          <div class="flex items-center space-x-3">
+            <span class="text-3xl">🛒</span>
+            <span class="text-2xl font-bold text-vet-blue">Nos Produits</span>
+            <span class="text-3xl">🐕</span>
+          </div>
+        </div>
+        <div class="flex-grow border-t-2 border-blue-300 max-w-xs"></div>
+      </div>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        Découvrez notre sélection de produits vétérinaires de qualité premium
+      </p>
+    </div>
+  </div>
+</div>
 
 <!-- Section Espace de Vente - Produits -->
 <section id="produits" class="py-20 bg-white">
@@ -193,9 +225,30 @@
     <!-- Lien vers le catalogue complet -->
     <div class="text-center mt-12">
       <a routerLink="/espace-proprietaire"
-        class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 inline-block">
+        class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 inline-flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
         Voir tous nos produits
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
       </a>
     </div>
   </div>
 </section>
+
+<!-- Bottom Decorative Section -->
+<div class="relative py-8 bg-gradient-to-b from-white to-vet-beige">
+  <div class="container max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-center">
+      <div class="flex-grow border-t-2 border-gray-300 max-w-md"></div>
+      <div class="mx-6 flex items-center space-x-2">
+        <span class="text-2xl">🐱</span>
+        <span class="text-gray-500 font-medium">VITALFEED</span>
+        <span class="text-2xl">🐶</span>
+      </div>
+      <div class="flex-grow border-t-2 border-gray-300 max-w-md"></div>
+    </div>
+  </div>
+</div>
