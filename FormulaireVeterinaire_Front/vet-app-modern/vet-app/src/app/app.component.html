@@ -1,6 +1,6 @@
 <!-- Header -->
 <div class="flex flex-col min-h-screen">
-  <header class="bg-white shadow-sm sticky top-0 z-50">
+  <header *ngIf="!isAdmin && !isEspaceVeterinaire && !isProduitsVeterinaire" class="bg-white shadow-sm sticky top-0 z-50">
     <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center py-4">
         <div class="flex items-center">
@@ -39,30 +39,13 @@
           </a>
         </div>
         <nav class="hidden md:flex space-x-8 items-center">
-          <ng-container *ngIf="!isAdmin && !isEspaceProprietaire">
+          <ng-container *ngIf="!isAdmin">
             <a routerLink="/" routerLinkActive="text-vet-blue font-medium" [routerLinkActiveOptions]="{exact: true}"
               class="text-gray-600 hover:text-vet-blue transition-colors">Accueil</a>
             <a routerLink="/espace-proprietaire" routerLinkActive="text-vet-blue font-medium"
               class="text-gray-600 hover:text-vet-blue transition-colors">Espace Propriétaire</a>
-            <a routerLink="/espace-veterinaire" routerLinkActive="text-vet-blue font-medium"
-              class="text-gray-600 hover:text-vet-blue transition-colors">Espace Vétérinaire</a>
             <a routerLink="/login" routerLinkActive="text-vet-blue font-medium"
               class="text-gray-600 hover:text-vet-blue transition-colors">Connexion Vétérinaire</a>
-          </ng-container>
-          <ng-container *ngIf="!isAdmin && isEspaceProprietaire">
-            <a routerLink="/" class="text-gray-600 hover:text-vet-blue transition-colors">Accueil</a>
-            <a routerLink="/espace-proprietaire" routerLinkActive="text-vet-blue font-medium"
-              class="text-gray-600 hover:text-vet-blue transition-colors">Espace Propriétaire</a>
-            <a routerLink="/login" routerLinkActive="text-vet-blue font-medium"
-              class="text-gray-600 hover:text-vet-blue transition-colors">Connexion Vétérinaire</a>
-            <!-- 
-            <button *ngIf="showCart" class="relative flex items-center justify-center w-10 h-10 bg-vet-blue hover:bg-blue-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 5M7 13v6a2 2 0 002 2h6a2 2 0 002-2v-6m-9 0h9"></path>
-              </svg>
-              <span *ngIf="cartItemsCount > 0" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ cartItemsCount }}</span>
-            </button>
-            -->
           </ng-container>
           <!-- Cart for Produits Veterinaire -->
           <ng-container *ngIf="isProduitsVeterinaire && !isAdmin">
@@ -205,7 +188,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-gray-900 text-white py-12">
+  <footer *ngIf="!isAdmin && !isEspaceVeterinaire && !isProduitsVeterinaire" class="bg-gray-900 text-white py-12">
     <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid md:grid-cols-4 gap-8">
         <div>
@@ -228,7 +211,7 @@
           <h3 class="text-lg font-semibold mb-4">Liens rapides</h3>
           <ul class="space-y-2">
             <li><a routerLink="/" class="text-gray-400 hover:text-white transition-colors">Accueil</a></li>
-            <li><a routerLink="/formulaire" class="text-gray-400 hover:text-white transition-colors">Demander un
+            <li><a routerLink="/formulaireUser" class="text-gray-400 hover:text-white transition-colors">Demander un
                 accès</a></li>
           </ul>
         </div>

@@ -1,27 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
 import { CartService } from '../../services/cart.service';
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  subCategory: string;
-  description: string;
-  inStock: boolean;
-}
+import { ProductService } from '../../services/product.service';
+import { Product } from '../../models/product.model';
 
 @Component({
   selector: 'app-espace-proprietaire',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, HttpClientModule],
   templateUrl: './espace-proprietaire.component.html',
   styleUrls: ['./espace-proprietaire.component.scss']
 })
 export class EspaceProprietaireComponent implements OnInit {
+  isLoading: boolean = true;
+  errorMessage: string = '';
   categories = [
     { name: 'Chien', icon: '🐶', color: '#3B82F6' },
     { name: 'Chat', icon: '🐱', color: '#EF4444' }
@@ -33,79 +27,7 @@ export class EspaceProprietaireComponent implements OnInit {
     { name: 'Test rapide', icon: '🧪', description: 'Tests de diagnostic' }
   ];
 
-  products: Product[] = [
-    {
-      id: 1,
-      name: 'Croquettes Premium Chien Adulte',
-      price: 45.99,
-      image: '/assets/images/croquettes-chien.jpg',
-      category: 'Chien',
-      subCategory: 'Aliment',
-      description: 'Croquettes haute qualité pour chien adulte',
-      inStock: true
-    },
-    {
-      id: 2,
-      name: 'Complément Vitaminé Chat',
-      price: 29.99,
-      image: '/assets/images/vitamines-chat.jpg',
-      category: 'Chat',
-      subCategory: 'Complément',
-      description: 'Vitamines essentielles pour chat',
-      inStock: true
-    },
-    
-    {
-      id: 4,
-      name: 'Pâtée Premium Chien Senior',
-      price: 38.99,
-      image: '/assets/images/patee-chien.jpg',
-      category: 'Chien',
-      subCategory: 'Aliment',
-      description: 'Alimentation adaptée aux chiens âgés',
-      inStock: true
-    },
-    {
-      id: 5,
-      name: 'Probiotiques Chat Digestif',
-      price: 42.00,
-      image: '/assets/images/probiotiques.jpg',
-      category: 'Chat',
-      subCategory: 'Complément',
-      description: 'Soutien de la flore intestinale',
-      inStock: true
-    },
-    {
-      id: 6,
-      name: 'Vitamines Chien Actif',
-      price: 33.90,
-      image: '/assets/images/vitamines-chien.jpg',
-      category: 'Chien',
-      subCategory: 'Complément',
-      description: 'Complément vitaminé pour chiens sportifs',
-      inStock: true
-    },
-    {
-      id: 7,
-      name: 'Test Rapide Parvo Chien',
-      price: 28.50,
-      image: '/assets/images/test-parvo.jpg',
-      category: 'Chien',
-      subCategory: 'Test rapide',
-      description: 'Test de dépistage du parvovirus',
-      inStock: true
-    },
-    {
-      id: 8,
-      name: 'Croquettes Premium Chat Stérilisé',
-      price: 42.90,
-      image: '/assets/images/croquettes-chat.jpg',
-      category: 'Chat',
-      subCategory: 'Aliment',
-      description: 'Alimentation spécialisée pour chats stérilisés',
-      inStock: true
-    }
-  ];
+  products: Product[] = [];
 
   selectedCategory: string | null = null;
   selectedSousCategory: string | null = null;
@@ -113,10 +35,19 @@ export class EspaceProprietaireComponent implements OnInit {
   currentPage = 1;
   itemsPerPage = 9;
   Math = Math; // Make Math available in template
+  highlightedProductId: number | null = null;
 
-  constructor(private router: Router, private route: ActivatedRoute, private cartService: CartService) { }
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private cartService: CartService,
+    private productService: ProductService
+  ) { }
 
   ngOnInit() {
+    // Load products from API
+    this.loadProducts();
+
     // Listen to query parameters from the navigation menu
     this.route.queryParams.subscribe(params => {
       if (params['animal']) {
@@ -131,8 +62,38 @@ export class EspaceProprietaireComponent implements OnInit {
         this.selectedSousCategory = null;
       }
 
+      // Check for highlighted product
+      if (params['highlight']) {
+        this.highlightedProductId = +params['highlight'];
+        // Remove highlight after animation completes
+        setTimeout(() => {
+          this.highlightedProductId = null;
+        }, 3000);
+      }
+
       // Reset to first page when filters change
       this.currentPage = 1;
+    });
+  }
+
+  /**
+   * Load products from API
+   */
+  loadProducts(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.productService.getAllProducts().subscribe({
+      next: (products) => {
+        this.products = products;
+        this.isLoading = false;
+        console.log('Products loaded:', products.length);
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.errorMessage = error.message;
+        this.isLoading = false;
+      }
     });
   }
 
@@ -273,7 +234,16 @@ export class EspaceProprietaireComponent implements OnInit {
     return index;
   }
 
-   navigateToVetSpace(): void {
+  navigateToVetSpace(): void {
     this.router.navigate(['/']);
+  }
+
+  /**
+   * Handle image load error
+   */
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = '/assets/images/default-product.jpg';
+    img.onerror = null; // Prevent infinite loop
   }
 }

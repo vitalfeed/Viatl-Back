@@ -79,22 +79,19 @@
     <!-- Products Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
       <div *ngFor="let product of getPaginatedProducts(); trackBy: trackByProductId"
-        class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 product-card overflow-hidden">
+        class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 product-card overflow-hidden"
+        [class.highlighted-product]="highlightedProductId === product.id">
 
         <div class="relative">
-          <div class="w-full h-56 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
-            <div class="text-center">
-              <div class="text-6xl mb-3">
-                {{ product.category === 'Chien' ? '🐶' : '🐱' }}
-              </div>
-              <div class="text-4xl opacity-60">
-                {{ product.subCategory === 'Aliment' ? '🍖' : product.subCategory === 'Complément' ? '💊' : '🧪' }}
-              </div>
-            </div>
+          <div
+            class="w-full h-48 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
+            <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain p-4"
+              (error)="onImageError($event)" loading="lazy">
           </div>
           <div class="absolute top-4 right-4">
             <span class="bg-blue-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">{{
-              product.subCategory }}</span>
+              product.subCategory === 'ALIMENT' ? 'Aliment' : product.subCategory === 'COMPLEMENT' ? 'Complément' :
+              'Test rapide' }}</span>
           </div>
           <div class="absolute top-4 left-4" *ngIf="!product.inStock">
             <span class="bg-red-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">Rupture</span>
@@ -105,18 +102,14 @@
           <h3 class="text-xl font-bold mb-3 text-gray-800 min-h-[3.5rem]">{{ product.name }}</h3>
           <p class="text-gray-600 mb-4 text-sm line-clamp-2 min-h-[2.5rem]">{{ product.description }}</p>
 
-          <div class="flex items-center justify-between mb-5">
-            <div class="flex items-center">
-              <span class="text-sm px-3 py-1.5 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category
-                }}</span>
-            </div>
-            <div class="text-2xl font-bold text-vet-blue">{{ product.price | number:'1.2-2' }}€</div>
+          <div class="flex items-center mb-5">
+            <span class="text-sm px-3 py-1.5 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category
+              }}</span>
           </div>
 
           <!-- Only Details Button (No Add to Cart) -->
-          <button
-            class="w-full flex items-center justify-center text-white bg-vet-blue hover:bg-blue-600 font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
-            (click)="viewProductDetails(product)">
+          <a [href]="product.detailsUrl" target="_blank" rel="noopener noreferrer"
+            class="w-full flex items-center justify-center text-white bg-vet-blue hover:bg-blue-600 font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -125,7 +118,7 @@
               </path>
             </svg>
             Voir les détails
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -176,7 +169,7 @@
           conçue spécialement pour simplifier votre pratique quotidienne et améliorer
           la qualité des soins pour vos patients à quatre pattes.
         </p>
-        <button class="btn-cta" routerLink="/espace-veterinaire">Découvrir l'Espace Vétérinaire</button>
+        <button class="btn-cta" routerLink="/formulaireUser">Commencer l'essai gratuit</button>
       </div>
       <div class="cta-icon">👩‍⚕️</div>
     </div>

@@ -1,8 +1,8 @@
 <section class="py-16 bg-gradient-to-b from-white to-vet-beige">
   <div class="container max-w-md mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-10">
-      <h1 class="text-3xl md:text-4xl font-bold mb-4 text-vet-blue">Connexion administrateur</h1>
-      <p class="text-lg text-gray-600">Veuillez entrer vos identifiants pour accéder à l'administration.</p>
+      <h1 class="text-3xl md:text-4xl font-bold mb-4 text-vet-blue">Connexion Vétérinaire</h1>
+      <p class="text-lg text-gray-600">Connectez-vous pour accéder à votre Espace Vétérinaire et gérer vos activités.</p>
     </div>
     <div class="bg-white rounded-xl shadow-md p-8 fade-in">
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -14,7 +14,7 @@
             formControlName="email"
             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-vet-blue focus:border-transparent"
             [ngClass]="{'border-red-500': submitted && f['email'].errors}"
-            placeholder="admin@example.com"
+            placeholder="votre-email@exemple.com"
           >
           <div *ngIf="submitted && f['email'].errors" class="text-red-500 text-sm mt-1">
             <span *ngIf="f['email'].errors['required']">L'email est requis</span>

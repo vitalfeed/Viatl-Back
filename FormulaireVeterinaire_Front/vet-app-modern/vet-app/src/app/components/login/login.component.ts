@@ -47,16 +47,43 @@ export class LoginComponent {
     this.http.post<any>('http://localhost:8061/api/login', loginData).subscribe({
       next: (response) => {
         this.loading = false;
+        console.log('Login response:', response);
+        
         if (response && response.token) {
-          localStorage.setItem('admin_token', response.token);
-          this.router.navigate(['/admin']);
+          // Check if user is admin and store token accordingly
+          if (response.isAdmin === true) {
+            localStorage.setItem('admin_token', response.token);
+            localStorage.setItem('isAdmin', 'true');
+            this.router.navigate(['/admin']);
+          } else {
+            localStorage.setItem('user_token', response.token);
+            localStorage.setItem('isAdmin', 'false');
+            
+            // Store userId for non-admin users
+            if (response.userId) {
+              localStorage.setItem('userId', response.userId.toString());
+            }
+            
+            this.router.navigate(['/espace-veterinaire']);
+          }
         } else {
           this.error = "Identifiants invalides ou réponse inattendue.";
         }
       },
       error: (error: HttpErrorResponse) => {
         this.loading = false;
-        this.error = error.error?.message || "Erreur lors de la connexion. Veuillez réessayer.";
+        console.error('Login error:', error);
+        
+        // User-friendly error messages
+        if (error.status === 401) {
+          this.error = "Email ou mot de passe incorrect.";
+        } else if (error.status === 404) {
+          this.error = "Utilisateur non trouvé.";
+        } else if (error.status === 500) {
+          this.error = "Erreur serveur. Veuillez réessayer plus tard.";
+        } else {
+          this.error = "Erreur lors de la connexion. Veuillez réessayer.";
+        }
       }
     });
   }

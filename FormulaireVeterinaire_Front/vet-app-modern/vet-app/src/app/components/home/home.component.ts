@@ -1,121 +1,41 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
 import { CartService } from '../../services/cart.service';
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  subCategory: string;
-  description: string;
-  inStock: boolean;
-}
+import { ProductService } from '../../services/product.service';
+import { Product } from '../../models/product.model';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, HttpClientModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent implements OnDestroy {
+export class HomeComponent implements OnInit, OnDestroy {
   // All available products
-  allProducts: Product[] = [
-    {
-      id: 1,
-      name: 'Croquettes Premium Chien Adulte',
-      price: 45.99,
-      image: '/assets/images/croquettes-chien.jpg',
-      category: 'Chien',
-      subCategory: 'Aliment',
-      description: 'Croquettes haute qualité pour chien adulte',
-      inStock: true
-    },
-    {
-      id: 2,
-      name: 'Complément Vitaminé Chat',
-      price: 29.99,
-      image: '/assets/images/vitamines-chat.jpg',
-      category: 'Chat',
-      subCategory: 'Complément',
-      description: 'Vitamines essentielles pour chat',
-      inStock: true
-    },
-    {
-      id: 3,
-      name: 'Test Rapide FIV/FeLV',
-      price: 35.50,
-      image: '/assets/images/test-fiv.jpg',
-      category: 'Chat',
-      subCategory: 'Test rapide',
-      description: 'Test de dépistage rapide',
-      inStock: false
-    },
-    {
-      id: 4,
-      name: 'Pâtée Premium Chien Senior',
-      price: 38.99,
-      image: '/assets/images/patee-chien.jpg',
-      category: 'Chien',
-      subCategory: 'Aliment',
-      description: 'Alimentation adaptée aux chiens âgés',
-      inStock: true
-    },
-    {
-      id: 5,
-      name: 'Probiotiques Chat Digestif',
-      price: 42.00,
-      image: '/assets/images/probiotiques.jpg',
-      category: 'Chat',
-      subCategory: 'Complément',
-      description: 'Soutien de la flore intestinale',
-      inStock: true
-    },
-    {
-      id: 6,
-      name: 'Vitamines Chien Actif',
-      price: 33.90,
-      image: '/assets/images/vitamines-chien.jpg',
-      category: 'Chien',
-      subCategory: 'Complément',
-      description: 'Complément vitaminé pour chiens sportifs',
-      inStock: true
-    },
-    {
-      id: 7,
-      name: 'Test Rapide Parvo Chien',
-      price: 28.50,
-      image: '/assets/images/test-parvo.jpg',
-      category: 'Chien',
-      subCategory: 'Test rapide',
-      description: 'Test de dépistage du parvovirus',
-      inStock: true
-    },
-    {
-      id: 8,
-      name: 'Croquettes Premium Chat Stérilisé',
-      price: 42.90,
-      image: '/assets/images/croquettes-chat.jpg',
-      category: 'Chat',
-      subCategory: 'Aliment',
-      description: 'Alimentation spécialisée pour chats stérilisés',
-      inStock: true
-    }
-  ];
+  allProducts: Product[] = [];
+  isLoading: boolean = true;
+  errorMessage: string = '';
 
   // Dynamic selection of featured products
   products: Product[] = [];
+  displayProducts: Product[] = []; // Products with duplicates for infinite scroll
   
   // Carousel properties
   currentSlide = 0;
   autoSlideInterval: any;
+  itemsPerSlide = 3; // Number of items to show per slide on desktop
 
-  constructor(private cartService: CartService, private router: Router) {
-    this.products = this.getFeaturedProducts();
-    this.startAutoSlide();
+  constructor(
+    private cartService: CartService, 
+    private router: Router,
+    private productService: ProductService
+  ) { }
+
+  ngOnInit() {
+    this.loadProducts();
   }
 
   ngOnDestroy() {
@@ -124,11 +44,49 @@ export class HomeComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Load products from API
+   */
+  loadProducts(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.productService.getAllProducts().subscribe({
+      next: (products) => {
+        this.allProducts = products;
+        this.products = this.getFeaturedProducts();
+        this.createDisplayProducts();
+        this.isLoading = false;
+        this.startAutoSlide();
+        console.log('Products loaded:', products.length);
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.errorMessage = error.message;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Create display products by duplicating the array for infinite scroll effect
+   */
+  createDisplayProducts(): void {
+    // Only duplicate if we have enough products to warrant infinite scrolling
+    // If we have 3 or fewer products, just show them once
+    if (this.products.length <= this.itemsPerSlide) {
+      this.displayProducts = this.products;
+    } else {
+      // Duplicate products to create seamless loop
+      this.displayProducts = [...this.products, ...this.products];
+    }
+  }
+
   // Method to dynamically select diverse products for display
   getFeaturedProducts(): Product[] {
     const featured: Product[] = [];
-    const categories = ['Chien', 'Chat'];
-    const subCategories = ['Aliment', 'Complément', 'Test rapide'];
+    const categories = ['CHIEN', 'CHAT'];
+    const subCategories = ['ALIMENT', 'COMPLEMENT', 'TEST_RAPIDE'];
     
     // Try to get one product from each combination of category and subcategory
     for (const category of categories) {
@@ -162,6 +120,19 @@ export class HomeComponent implements OnDestroy {
     console.log('Produit ajouté au panier:', product.name);
   }
 
+  /**
+   * Navigate to product in espace-proprietaire shop
+   */
+  viewProductInShop(product: Product): void {
+    // Navigate to espace-proprietaire page with product ID as query parameter
+    this.router.navigate(['/espace-proprietaire'], { 
+      queryParams: { highlight: product.id }
+    }).then(() => {
+      // Scroll to top of page smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   // Refresh featured products (for potential future use)
   refreshFeaturedProducts(): void {
     this.products = this.getFeaturedProducts();
@@ -174,12 +145,52 @@ export class HomeComponent implements OnDestroy {
     }, 4000); // Auto slide every 4 seconds
   }
 
+  getTotalSlides(): number {
+    return Math.ceil(this.products.length / this.itemsPerSlide);
+  }
+
   nextSlide(): void {
-    this.currentSlide = (this.currentSlide + 1) % this.products.length;
+    // Only enable infinite scroll if we have more products than items per slide
+    if (this.products.length <= this.itemsPerSlide) {
+      // Simple carousel without infinite scroll
+      const maxSlide = Math.max(0, this.products.length - this.itemsPerSlide);
+      if (this.currentSlide < maxSlide) {
+        this.currentSlide++;
+      } else {
+        this.currentSlide = 0; // Loop back to start
+      }
+    } else {
+      // Infinite scroll carousel
+      this.currentSlide++;
+      
+      // Reset to beginning when we've shown all original products
+      if (this.currentSlide >= this.products.length) {
+        // Use setTimeout to reset position after transition completes
+        setTimeout(() => {
+          this.currentSlide = 0;
+        }, 500); // Match transition duration
+      }
+    }
   }
 
   prevSlide(): void {
-    this.currentSlide = this.currentSlide === 0 ? this.products.length - 1 : this.currentSlide - 1;
+    if (this.products.length <= this.itemsPerSlide) {
+      // Simple carousel without infinite scroll
+      const maxSlide = Math.max(0, this.products.length - this.itemsPerSlide);
+      if (this.currentSlide > 0) {
+        this.currentSlide--;
+      } else {
+        this.currentSlide = maxSlide; // Loop to end
+      }
+    } else {
+      // Infinite scroll carousel
+      if (this.currentSlide === 0) {
+        // Jump to the end of the first set
+        this.currentSlide = this.products.length - 1;
+      } else {
+        this.currentSlide--;
+      }
+    }
   }
 
   goToSlide(index: number): void {
@@ -192,7 +203,17 @@ export class HomeComponent implements OnDestroy {
   }
 
   getSlideIndicators(): number[] {
-    return Array.from({ length: this.products.length }, (_, i) => i);
+    return Array.from({ length: this.getTotalSlides() }, (_, i) => i);
+  }
+
+  getTransformValue(): string {
+    // Calculate transform based on item width percentage
+    const itemWidth = 100 / this.itemsPerSlide; // Each item takes this % of container
+    return `translateX(-${this.currentSlide * itemWidth}%)`;
+  }
+
+  getCurrentIndicator(): number {
+    return this.currentSlide % this.getTotalSlides();
   }
 
   trackByProductId(index: number, product: Product): number {
@@ -204,6 +225,15 @@ export class HomeComponent implements OnDestroy {
   }
 
   navigateToVetSpace(): void {
-    this.router.navigate(['/espace-veterinaire']);
+    this.router.navigate(['/formulaireUser']);
+  }
+
+  /**
+   * Handle image load error
+   */
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = '/assets/images/default-product.jpg';
+    img.onerror = null; // Prevent infinite loop
   }
 }

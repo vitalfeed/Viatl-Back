@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -15,7 +15,7 @@ import { SearchCountryField, CountryISO, PhoneNumberFormat } from 'ngx-intl-tel-
   templateUrl: './formulaire.component.html',
   styleUrl: './formulaire.component.scss'
 })
-export class FormulaireComponent {
+export class FormulaireComponent implements OnInit {
   demandeForm: FormGroup;
   submitted = false;
   loading = false;
@@ -45,11 +45,27 @@ export class FormulaireComponent {
       nom: ['', [Validators.required, Validators.minLength(2)]],
       prenom: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      telephone: ['', [Validators.required]],
+      telephone: [''],
       adresseCabinet: ['', Validators.required],
-      numVeterinaire: ['', Validators.required]
+      numMatricule: ['', Validators.required]
 
     });
+  }
+
+  ngOnInit() {
+    // Check if user is authenticated
+    this.checkAuthentication();
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  checkAuthentication(): void {
+    const userToken = localStorage.getItem('user_token');
+    if (!userToken) {
+      // Redirect to login if not authenticated
+      this.router.navigate(['/login']);
+    }
   }
 
   get f() { return this.demandeForm.controls; }
@@ -74,52 +90,52 @@ export class FormulaireComponent {
       // Utiliser le numéro international sans le +
       telephone = telephoneValue.internationalNumber.replace(/\s/g, '').replace(/\+/g, '');
     } else {
-      telephone = telephoneValue;
+      telephone = telephoneValue || '';
     }
     
-    const demande: Demande = {
+    const userData = {
       nom: this.demandeForm.value.nom,
       prenom: this.demandeForm.value.prenom,
       email: this.demandeForm.value.email,
       telephone: telephone,
       adresseCabinet: this.demandeForm.value.adresseCabinet,
-      numVeterinaire: this.demandeForm.value.numVeterinaire
+      numMatricule: this.demandeForm.value.numMatricule
     };
 
-    this.demandeService.envoyerDemande(demande).subscribe({
+    this.demandeService.registerUser(userData).subscribe({
       next: (response) => {
         this.loading = false;
-        // Vérifier si la réponse contient un message d'erreur malgré le code 200
-        if (response && response.error) {
-          this.error = response.error;
-          return;
-        }
-        
-        this.successMessage = response.message || 'Demande soumise avec succès. Vous serez contacté pour finaliser votre inscription.';
+        this.successMessage = 'Inscription réussie ! Vous serez contacté pour finaliser votre compte.';
         
         // Stockage des données dans le localStorage pour la page de confirmation
-        localStorage.setItem('demande', JSON.stringify(demande));
+        localStorage.setItem('demande', JSON.stringify(userData));
         
         // Redirection après 2 secondes
         setTimeout(() => {
           this.router.navigate(['/confirmation']);
         }, 2000);
       },
-      error: (error: HttpErrorResponse) => {
+      error: (error: any) => {
         this.loading = false;
-        if (error.status === 200) {
-          // Si le statut est 200 mais qu'il y a une erreur, c'est probablement une réponse mal formée
-          this.successMessage = 'Demande soumise avec succès. Vous serez contacté pour finaliser votre inscription.';
+        console.error('Registration error:', error);
+        
+        // Handle different error scenarios with user-friendly messages
+        if (error.error && typeof error.error === 'string') {
+          const errorText = error.error.toLowerCase();
           
-          // Stockage des données dans le localStorage pour la page de confirmation
-          localStorage.setItem('demande', JSON.stringify(demande));
-          
-          // Redirection après 2 secondes
-          setTimeout(() => {
-            this.router.navigate(['/confirmation']);
-          }, 2000);
+          if (errorText.includes('matricule')) {
+            this.error = 'Le numéro matricule que vous avez saisi n\'existe pas dans notre service.';
+          } else if (errorText.includes('email')) {
+            this.error = 'Cette adresse email est déjà utilisée.';
+          } else {
+            this.error = 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.';
+          }
+        } else if (error.status === 400) {
+          this.error = 'Les informations fournies sont incorrectes. Veuillez vérifier vos données.';
+        } else if (error.status === 500) {
+          this.error = 'Une erreur serveur est survenue. Veuillez réessayer plus tard.';
         } else {
-          this.error = error.error?.message || "Une erreur est survenue lors de l'envoi de votre demande. Veuillez réessayer.";
+          this.error = 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.';
         }
       }
     });

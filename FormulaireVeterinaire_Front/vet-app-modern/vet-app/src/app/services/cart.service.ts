@@ -6,7 +6,7 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  image: string;
+  imageUrl: string;
   category: string;
   subCategory: string;
 }
@@ -40,7 +40,7 @@ export class CartService {
         name: product.name,
         price: product.price,
         quantity: 1,
-        image: product.image,
+        imageUrl: product.imageUrl || product.image || '/assets/images/default-product.jpg',
         category: product.category,
         subCategory: product.subCategory
       };

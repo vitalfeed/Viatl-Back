@@ -61,15 +61,7 @@ export class AppComponent {
   }
 
   get navbarTitle(): string {
-    if (this.isEspaceVeterinaire) {
-      return 'VITALFEED Vet';
-    } else if (this.isEspaceProprietaire) {
-      return 'VITALFEED Shop';
-    } else if (this.isProduitsVeterinaire) {
-      return 'VITALFEED Vet';
-    } else {
-      return 'VITALFEED';
-    }
+    return 'VITALFEED';
   }
 
   get showCart(): boolean {

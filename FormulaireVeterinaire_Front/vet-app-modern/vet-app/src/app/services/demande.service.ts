@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class DemandeService {
-  private apiUrl = `${environment.apiUrl}/demandes`;
+  private apiUrl = `${environment.apiUrl}/users/register`;
 
   constructor(private http: HttpClient) { }
 
@@ -34,5 +34,28 @@ export class DemandeService {
           throw error;
         })
       );
+  }
+
+  registerUser(userData: any): Observable<any> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.post(this.apiUrl, userData, {
+      headers,
+      responseType: 'text'
+    }).pipe(
+      map(response => {
+        // Backend returns plain text, convert to object
+        return { message: response };
+      }),
+      catchError(error => {
+        // Handle text error responses
+        if (error.error && typeof error.error === 'string') {
+          throw { error: error.error };
+        }
+        throw error;
+      })
+    );
   }
 } 

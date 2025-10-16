@@ -23,6 +23,11 @@ export class PanierComponent implements OnInit {
     this.cartService.cartItems$.subscribe(items => {
       this.cartItems = items;
       this.cartTotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+      // Debug: Log cart items to check imageUrl
+      console.log('Cart items:', items);
+      items.forEach(item => {
+        console.log(`Product: ${item.name}, ImageURL: ${item.imageUrl}`);
+      });
     });
   }
 
@@ -53,5 +58,43 @@ export class PanierComponent implements OnInit {
 
   trackByCartItemId(index: number, item: CartItem): number {
     return item.id;
+  }
+
+  /**
+   * Handle image load error
+   */
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    console.log('Image failed to load:', img.src);
+    img.src = '/assets/images/default-product.jpg';
+    img.onerror = null; // Prevent infinite loop
+  }
+
+  /**
+   * Get display label for category
+   */
+  getCategoryLabel(category: string): string {
+    const labels: { [key: string]: string } = {
+      'CHIEN': 'Chien',
+      'CHAT': 'Chat',
+      'Chien': 'Chien',
+      'Chat': 'Chat'
+    };
+    return labels[category] || category;
+  }
+
+  /**
+   * Get display label for sub-category
+   */
+  getSubCategoryLabel(subCategory: string): string {
+    const labels: { [key: string]: string } = {
+      'ALIMENT': 'Aliment',
+      'COMPLEMENT': 'Complément',
+      'TEST_RAPIDE': 'Test rapide',
+      'Aliment': 'Aliment',
+      'Complément': 'Complément',
+      'Test rapide': 'Test rapide'
+    };
+    return labels[subCategory] || subCategory;
   }
 }

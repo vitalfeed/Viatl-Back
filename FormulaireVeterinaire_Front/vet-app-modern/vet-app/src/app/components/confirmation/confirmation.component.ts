@@ -11,7 +11,7 @@ import { Demande } from '../../models/demande.model';
   styleUrl: './confirmation.component.scss'
 })
 export class ConfirmationComponent implements OnInit {
-  demande: Demande | null = null;
+  demande: any | null = null;
 
   ngOnInit(): void {
     const demandeData = localStorage.getItem('demande');
