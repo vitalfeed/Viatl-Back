@@ -12,5 +12,4 @@ public interface SubscriptionService {
     String deleteSubscription(Long subscriptionId);
     List<SubscriptionDTO> getAllSubscriptions();
     Optional<SubscriptionDTO> getSubscriptionById(Long subscriptionId);
-
 }

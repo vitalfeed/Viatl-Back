@@ -1,12 +1,12 @@
 package com.veterinaire.formulaireveterinaire.controller;
 
+import com.veterinaire.formulaireveterinaire.entity.OurVeterinaire;
 import com.veterinaire.formulaireveterinaire.service.OurVeterinaireService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/veterinaires")
@@ -15,6 +15,12 @@ public class OurVeterinaireController {
 
     public OurVeterinaireController(OurVeterinaireService ourVeterinaireService) {
         this.ourVeterinaireService = ourVeterinaireService;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<OurVeterinaire>> getAllVeterinaires() {
+        List<OurVeterinaire> veterinaires = ourVeterinaireService.getAllVeterinaires();
+        return ResponseEntity.ok(veterinaires);
     }
 
     @PostMapping("/upload-excel")

@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,6 +26,19 @@ public class OurVeterinaireServiceImpl implements OurVeterinaireService {
 
     public OurVeterinaireServiceImpl(OurVeterinaireRepository ourVeterinaireRepository) {
         this.ourVeterinaireRepository = ourVeterinaireRepository;
+    }
+
+    @Override
+    public List<OurVeterinaire> getAllVeterinaires() {
+        List<OurVeterinaire> veterinaires = ourVeterinaireRepository.findAll();
+        logger.info("Retrieved {} veterinaires from database", veterinaires.size());
+
+        // Throw if empty (uncomment if you prefer 404 on empty)
+         if (veterinaires.isEmpty()) {
+             throw new RuntimeException("Aucun vétérinaire trouvé.");
+         }
+
+        return veterinaires;
     }
 
     @Override

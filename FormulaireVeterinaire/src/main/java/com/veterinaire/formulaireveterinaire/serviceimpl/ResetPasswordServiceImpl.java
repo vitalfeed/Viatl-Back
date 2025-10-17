@@ -10,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-
 @Service
 public class ResetPasswordServiceImpl implements ResetPasswordService {
 
@@ -25,21 +24,34 @@ public class ResetPasswordServiceImpl implements ResetPasswordService {
     @Override
     public ResponseEntity<String> resetPassword(Map<String, String> request, UserDetails userDetails) {
         if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"Invalid or missing authentication\"}");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("{\"error\": \"Invalid or missing authentication\"}");
         }
 
         String email = userDetails.getUsername();
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("{\"error\": \"User not found\"}");
         }
 
+        String currentPassword = request.get("currentPassword");
         String newPassword = request.get("newPassword");
-        if (newPassword == null || newPassword.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"New password is required\"}");
+
+        if (currentPassword == null || currentPassword.isBlank() ||
+                newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"Both current and new passwords are required\"}");
         }
 
+        // ✅ Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"Current password is incorrect\"}");
+        }
+
+        // ✅ Save new password
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 

@@ -47,11 +47,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public String assignSubscription(Long userId, SubscriptionType subscriptionType) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + userId));
-        Subscription existingSubscription = user.getSubscription();
 
+        Subscription existingSubscription = user.getSubscription();
         if (existingSubscription != null) {
             logger.warn("User ID: {} already has a subscription with type: {}", userId, existingSubscription.getSubscriptionType());
-            return "Erreur : L'utilisateur avec l'ID " + userId + " a déjà un abonnement.";
+            throw new RuntimeException("L'utilisateur avec l'ID " + userId + " a déjà un abonnement."); // Throw instead of return
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -82,7 +82,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public String updateSubscription(Long subscriptionId, SubscriptionType subscriptionType) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Abonnement non trouvé avec l'ID : " + subscriptionId));
+
         User user = subscription.getUser();
+        if (user == null) {
+            throw new RuntimeException("Utilisateur associé à l'abonnement non trouvé.");
+        }
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime newEndDate = calculateEndDate(now, subscriptionType);
@@ -91,10 +95,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setStartDate(now);
         subscription.setEndDate(newEndDate);
         subscriptionRepository.save(subscription);
+
         logger.info("Updated subscription ID: {} with new type: {} for user ID: {}", subscriptionId, subscriptionType, user.getId());
 
         sendSubscriptionUpdateEmail(user, subscriptionType, now, newEndDate, financeEmail);
 
+        // Only success reaches here
         return "Abonnement mis à jour avec succès pour l'utilisateur ID " + user.getId() + ". Vérifiez votre email.";
     }
 
@@ -102,16 +108,26 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public String deleteSubscription(Long subscriptionId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Abonnement non trouvé avec l'ID : " + subscriptionId));
+
         User user = subscription.getUser();
+        if (user == null) {
+            throw new RuntimeException("Utilisateur associé à l'abonnement non trouvé.");
+        }
+
+        // Detach subscription from user before delete (avoids potential issues)
+        user.setSubscription(null);
 
         subscriptionRepository.delete(subscription);
         logger.info("Deleted subscription ID: {} for user ID: {}", subscriptionId, user.getId());
 
-        if (user.getSubscription() == null && user.getStatus() == SubscriptionStatus.ACTIVE) {
+        if (user.getStatus() == SubscriptionStatus.ACTIVE) {
             user.setStatus(SubscriptionStatus.INACTIVE);
             userRepository.save(user);
             logger.info("User ID: {} status updated to INACTIVE", user.getId());
         }
+
+        // Optional: Add email sending here if needed
+        // sendSubscriptionDeleteEmail(user, financeEmail);
 
         return "Abonnement supprimé avec succès pour l'utilisateur ID " + user.getId() + ".";
     }

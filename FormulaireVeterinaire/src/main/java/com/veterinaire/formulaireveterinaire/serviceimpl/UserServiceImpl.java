@@ -1,5 +1,6 @@
 package com.veterinaire.formulaireveterinaire.serviceimpl;
 
+import com.veterinaire.formulaireveterinaire.DTO.UserDTO;
 import com.veterinaire.formulaireveterinaire.Enums.SubscriptionStatus;
 
 import com.veterinaire.formulaireveterinaire.DAO.OurVeterinaireRepository;
@@ -18,9 +19,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -99,13 +101,54 @@ public class UserServiceImpl implements UserService {
             return "Nouvel utilisateur enregistré avec succès. Vérifiez votre email.";
         }
     }
+    @Override
+    public List<UserDTO> getAllUsers() {
+        logger.info("Fetching all users except ID 1");  // Safe: logging a string, not objects
+        List<User> users = userRepository.findAll();
+
+        return users.stream()
+                .filter(user -> user.getId() != null && !user.getId().equals(1L))  // Exclude ID 1 with null check
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private UserDTO mapToDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setNom(user.getNom());
+        dto.setPrenom(user.getPrenom());
+        dto.setEmail(user.getEmail());
+        dto.setTelephone(user.getTelephone());
+        dto.setAdresseCabinet(user.getAdresseCabinet());
+        dto.setNumMatricule(user.getNumMatricule());
+
+        // Map status (assuming enum)
+        dto.setStatus(user.getStatus() != null ? user.getStatus().name() : null);
+
+        // Map Subscription: Use ID as fallback string (adjust if better field exists)
+        if (user.getSubscription() != null) {
+            // Primary: Use getId() if available (convert to String)
+            Long subId = user.getSubscription().getId();
+            dto.setSubscription(subId != null ? subId.toString() : "Unknown");
+
+            // Alternative: If autocomplete shows getName(), replace with:
+            // dto.setSubscription(user.getSubscription().getName());
+
+            // Alternative: HashCode as unique temp ID (not human-readable)
+            // dto.setSubscription(String.valueOf(user.getSubscription().hashCode()));
+        } else {
+            dto.setSubscription(null);
+        }
+
+        return dto;
+    }
+
 
 
     @Override
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
 
 
     private String generateRandomPassword() {
