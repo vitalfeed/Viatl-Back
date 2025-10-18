@@ -94,7 +94,7 @@
             </div>
             <div class="map-embed">
               <iframe
-                src="https://www.openstreetmap.org/export/embed.html?bbox=2.224,48.815,2.469,48.902&layer=mapnik&marker=48.8566,2.3522"
+                [src]="getMapUrl() | sanitizeUrl"
                 style="width:100%; height:400px; border-radius:12px; border:none;"
                 allowfullscreen
                 loading="lazy">
@@ -107,63 +107,65 @@
         <!-- Locations List -->
         <div class="locations-container">
           <div class="locations-header">
-            <h3 class="locations-title">Nos Cabinets</h3>
+            <h3 class="locations-title">Nos Cabinets ({{ filteredLocations.length }})</h3>
             <div class="filter-buttons">
-              <button class="filter-btn active">Tous</button>
-              <button class="filter-btn">Cabinets</button>
+              <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterLocations('all')">Tous</button>
+              <button class="filter-btn" [class.active]="selectedFilter === 'BOUTIQUE'" (click)="filterLocations('BOUTIQUE')">Boutiques</button>
+              <button class="filter-btn" [class.active]="selectedFilter === 'CABINET'" (click)="filterLocations('CABINET')">Cabinets</button>
             </div>
           </div>
           
-          <div class="locations-list">
-            <!-- Cabinet principal -->
-            <div class="location-card featured">
-              <div class="location-badge">⭐ Cabinet Principal</div>
-              <h4 class="location-name">Cabinet Vétérinaire VITALFEED Paris Centre</h4>
-              <div class="location-details">
-                <div class="location-info">
-                  <span class="info-icon">📍</span>
-                  <span class="info-text">123 Avenue des Champs-Élysées, 75008 Paris</span>
-                </div>
-                <div class="location-info">
-                  <span class="info-icon">📞</span>
-                  <span class="info-text">01 42 56 78 90</span>
-                </div>
-                <div class="location-info">
-                  <span class="info-icon">🕒</span>
-                  <span class="info-text">Lun-Sam: 9h-19h, Dim: 10h-18h</span>
-                </div>
-              </div>
-              <div class="location-actions">
-                <button class="btn-location primary">🧭 Itinéraire</button>
-                <button class="btn-location secondary">📞 Appeler</button>
-              </div>
-            </div>
-            
-            <!-- Autres cabinets -->
-            <div class="location-card">
-              <div class="location-badge">🏥 Cabinet</div>
-              <h4 class="location-name">Cabinet Vétérinaire VITALFEED Montparnasse</h4>
-              <div class="location-details">
-                <div class="location-info">
-                  <span class="info-icon">📍</span>
-                  <span class="info-text">45 Rue de Rennes, 75006 Paris</span>
-                </div>
-                <div class="location-info">
-                  <span class="info-icon">📞</span>
-                  <span class="info-text">01 45 32 67 89</span>
-                </div>
-                <div class="location-info">
-                  <span class="info-icon">🕒</span>
-                  <span class="info-text">Lun-Sam: 9h30-19h30</span>
-                </div>
-              </div>
-              <div class="location-actions">
-                <button class="btn-location primary">🧭 Itinéraire</button>
-                <button class="btn-location secondary">📞 Appeler</button>
-              </div>
-            </div>
-            
+          <!-- Loading State -->
+          <div *ngIf="loading" class="text-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-vet-blue mx-auto mb-4"></div>
+            <p class="text-gray-600">Chargement des cabinets...</p>
+          </div>
 
+          <!-- Error State -->
+          <div *ngIf="error && !loading" class="text-center py-12">
+            <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-red-600 font-medium">{{ error }}</p>
+          </div>
+
+          <!-- Locations List -->
+          <div *ngIf="!loading && !error" class="locations-list">
+            <!-- No results -->
+            <div *ngIf="filteredLocations.length === 0" class="text-center py-12">
+              <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <p class="text-lg font-medium text-gray-900">Aucun cabinet trouvé</p>
+              <p class="text-sm text-gray-600 mt-2">Essayez un autre filtre</p>
+            </div>
+
+            <!-- Location Cards -->
+            <div *ngFor="let location of filteredLocations" class="location-card" [class.featured]="location.featured">
+              <div class="location-badge">
+                {{ location.featured ? '⭐ Cabinet Principal' : (location.type === 'BOUTIQUE' ? '🏪 Boutique' : '🏥 Cabinet') }}
+              </div>
+              <h4 class="location-name">{{ location.name }}</h4>
+              <div class="location-details">
+                <div class="location-info">
+                  <span class="info-icon">📍</span>
+                  <span class="info-text">{{ location.address }}, {{ location.city }}</span>
+                </div>
+                <div class="location-info">
+                  <span class="info-icon">📞</span>
+                  <span class="info-text">{{ location.phone }}</span>
+                </div>
+                <div class="location-info">
+                  <span class="info-icon">🗺️</span>
+                  <span class="info-text">Lat: {{ location.latitude }}, Lng: {{ location.longitude }}</span>
+                </div>
+              </div>
+              <div class="location-actions">
+                <button class="btn-location primary" (click)="getDirections(location)">🧭 Itinéraire</button>
+                <button class="btn-location secondary" (click)="callLocation(location.phone)">📞 Appeler</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -200,7 +202,7 @@
     </div>
     <div class="modal-map-container">
       <iframe
-        src="https://www.openstreetmap.org/export/embed.html?bbox=2.224,48.815,2.469,48.902&layer=mapnik&marker=48.8566,2.3522"
+        [src]="getMapUrl() | sanitizeUrl"
         style="width:100%; height:100%; border:none; border-radius:8px;"
         allowfullscreen
         loading="lazy">

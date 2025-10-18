@@ -201,7 +201,30 @@ export class AdminVeterinairesComponent implements OnInit {
         error: (error) => {
           this.uploadLoading = false;
           console.error('Error uploading file:', error);
-          this.error = error.error?.message || 'Erreur lors de l\'importation du fichier';
+          
+          // Handle specific error messages
+          let errorMessage = 'Erreur lors de l\'importation du fichier';
+          
+          if (error.status === 400) {
+            const errorText = error.error?.message || error.error || '';
+            
+            // Check for header column error
+            if (errorText.includes('en-tête') || errorText.includes('colonnes')) {
+              errorMessage = '❌ Format de fichier incorrect : Le fichier Excel doit contenir exactement les colonnes "nom", "prenom" et "matricule" dans l\'en-tête.';
+            }
+            // Check for incomplete row error
+            else if (errorText.includes('incomplète') || errorText.includes('Ligne')) {
+              // Extract line number if present
+              const lineMatch = errorText.match(/Ligne (\d+)/);
+              const lineNumber = lineMatch ? lineMatch[1] : '';
+              errorMessage = `❌ Données incomplètes ${lineNumber ? `à la ligne ${lineNumber}` : ''} : Tous les champs (nom, prénom, matricule) doivent être remplis pour chaque vétérinaire.`;
+            }
+            else {
+              errorMessage = errorText || errorMessage;
+            }
+          }
+          
+          this.error = errorMessage;
         }
       });
   }
