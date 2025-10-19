@@ -28,28 +28,40 @@ public class OurVeterinaireServiceImpl implements OurVeterinaireService {
         this.ourVeterinaireRepository = ourVeterinaireRepository;
     }
 
-    @Override
-    public List<OurVeterinaire> getAllVeterinaires() {
-        List<OurVeterinaire> veterinaires = ourVeterinaireRepository.findAll();
-        logger.info("Retrieved {} veterinaires from database", veterinaires.size());
 
-        // Throw if empty (uncomment if you prefer 404 on empty)
-         if (veterinaires.isEmpty()) {
-             throw new RuntimeException("Aucun vétérinaire trouvé.");
-         }
-
-        return veterinaires;
-    }
 
     @Override
     public void uploadExcel(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            logger.error("Le fichier fourni est vide ou null.");
+            throw new IllegalArgumentException("Le fichier Excel est vide ou non fourni.");
+        }
+
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            if (sheet == null) {
-                throw new Exception("Le fichier Excel est vide ou la feuille n'existe pas.");
+            if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+                logger.error("Le fichier Excel est vide ou la feuille n'existe pas.");
+                throw new IllegalArgumentException("Le fichier Excel est vide ou la feuille n'existe pas.");
             }
 
+            // Validate header row
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                logger.error("La première ligne (en-tête) est manquante.");
+                throw new IllegalArgumentException("La première ligne (en-tête) est manquante.");
+            }
+
+            // Expected column names
+            String[] expectedHeaders = {"nom", "prenom", "matricule"};
+            boolean headersValid = validateHeaders(headerRow, expectedHeaders);
+
+            if (!headersValid) {
+                logger.error("Les colonnes de l'en-tête ne correspondent pas à 'nom', 'prenom', 'matricule'.");
+                throw new IllegalArgumentException("Les colonnes de l'en-tête doivent être exactement 'nom', 'prenom', 'matricule'.");
+            }
+
+            // Process data rows
             for (Row row : sheet) {
                 if (row == null || row.getRowNum() == 0) continue; // Skip header or null rows
 
@@ -58,19 +70,16 @@ public class OurVeterinaireServiceImpl implements OurVeterinaireService {
                 Cell prenomCell = row.getCell(1, Row.MissingCellPolicy.RETURN_NULL_AND_BLANK);
                 Cell matriculeCell = row.getCell(2, Row.MissingCellPolicy.RETURN_NULL_AND_BLANK);
 
-                if (nomCell == null || prenomCell == null || matriculeCell == null) {
-                    logger.warn("Row {} has missing cells, skipping.", row.getRowNum());
-                    continue;
-                }
-
                 // Handle different cell types
                 String nom = getCellValueAsString(nomCell).trim();
                 String prenom = getCellValueAsString(prenomCell).trim();
                 String matricule = getCellValueAsString(matriculeCell).trim();
 
-                if (nom.isEmpty() || prenom.isEmpty() || matricule.isEmpty()) {
-                    logger.warn("Row {} has empty values, skipping.", row.getRowNum());
-                    continue;
+                // Check for null or empty values
+                if (nomCell == null || prenomCell == null || matriculeCell == null || nom.isEmpty() || prenom.isEmpty() || matricule.isEmpty()) {
+                    String errorMessage = String.format("Ligne %d est incomplète : tous les champs (nom, prenom, matricule) doivent être remplis.", row.getRowNum() + 1);
+                    logger.error(errorMessage);
+                    throw new InvalidExcelFileException(errorMessage);
                 }
 
                 Optional<OurVeterinaire> existing = ourVeterinaireRepository.findByMatricule(matricule);
@@ -80,7 +89,7 @@ public class OurVeterinaireServiceImpl implements OurVeterinaireService {
                     vet.setNom(nom);
                     vet.setPrenom(prenom);
                     ourVeterinaireRepository.save(vet);
-                    logger.info("Updated OurVeterinaire for matricule: {} (Row {})", matricule, row.getRowNum());
+                    logger.info("Mise à jour de OurVeterinaire pour matricule: {} (Ligne {})", matricule, row.getRowNum() + 1);
                 } else {
                     // Create new
                     OurVeterinaire vet = new OurVeterinaire();
@@ -88,26 +97,83 @@ public class OurVeterinaireServiceImpl implements OurVeterinaireService {
                     vet.setPrenom(prenom);
                     vet.setMatricule(matricule);
                     ourVeterinaireRepository.save(vet);
-                    logger.info("Created OurVeterinaire for matricule: {} (Row {})", matricule, row.getRowNum());
+                    logger.info("Création de OurVeterinaire pour matricule: {} (Ligne {})", matricule, row.getRowNum() + 1);
                 }
             }
         } catch (IOException e) {
-            logger.error("Error processing Excel file: {}", e.getMessage());
-            throw new Exception("Erreur lors du traitement du fichier Excel", e);
+            logger.error("Erreur lors du traitement du fichier Excel: {}", e.getMessage(), e);
+            String userMessage = determineUserFriendlyMessage(e);
+            throw new InvalidExcelFileException(userMessage, e);
         }
     }
 
+    // Helper method to validate headers
+    private boolean validateHeaders(Row headerRow, String[] expectedHeaders) {
+        if (headerRow.getPhysicalNumberOfCells() < expectedHeaders.length) {
+            return false;
+        }
+
+        for (int i = 0; i < expectedHeaders.length; i++) {
+            Cell cell = headerRow.getCell(i, Row.MissingCellPolicy.RETURN_NULL_AND_BLANK);
+            String headerValue = getCellValueAsString(cell).trim().toLowerCase();
+            if (!headerValue.equalsIgnoreCase(expectedHeaders[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Helper method to convert cell value to string
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue() != null ? cell.getStringCellValue() : "";
             case NUMERIC:
+                if (cell.getColumnIndex() == 2) { // Matricule column
+                    return String.format("%.0f", cell.getNumericCellValue());
+                }
                 return String.valueOf(cell.getNumericCellValue());
             case BLANK:
                 return "";
             default:
                 return "";
         }
+    }
+
+    // Custom exception class
+    public class InvalidExcelFileException extends Exception {
+        public InvalidExcelFileException(String message) {
+            super(message);
+        }
+
+        public InvalidExcelFileException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    // Determine user-friendly message for IOException
+    private String determineUserFriendlyMessage(IOException e) {
+        String message = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+        if (message.contains("invalidformat")) {
+            return "Le fichier fourni n'est pas un fichier Excel valide (format XLSX requis).";
+        } else if (message.contains("stream closed")) {
+            return "Erreur lors de la lecture du fichier : flux fermé.";
+        } else {
+            return "Erreur lors du traitement du fichier Excel. Veuillez vérifier le format et réessayer.";
+        }
+    }
+
+    @Override
+    public List<OurVeterinaire> getAllVeterinaires() {
+        List<OurVeterinaire> veterinaires = ourVeterinaireRepository.findAll();
+        logger.info("Retrieved {} veterinaires from database", veterinaires.size());
+
+        // Throw if empty (uncomment if you prefer 404 on empty)
+        if (veterinaires.isEmpty()) {
+            throw new RuntimeException("Aucun vétérinaire trouvé.");
+        }
+
+        return veterinaires;
     }
 }

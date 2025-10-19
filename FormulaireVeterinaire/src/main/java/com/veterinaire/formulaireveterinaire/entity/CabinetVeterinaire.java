@@ -21,17 +21,23 @@ public class CabinetVeterinaire {
     private String address;
 
     @Column(nullable = true)
-    private String latitude;
-
-    @Column(nullable = true)
-    private String longitude;
+    private String City;
 
     @Column(nullable = true)
     private String phone;
+
+    @Column(nullable = true)
+    private double  latitude;
+
+    @Column(nullable = true)
+    private double  longitude;
 
     @Column(nullable = false)
     private boolean isFeatured = false;
 
     @Column(nullable = false)
     private String type = "BOUTIQUE";
+
+    @Column(nullable = false)
+    private String matricule ;
 }

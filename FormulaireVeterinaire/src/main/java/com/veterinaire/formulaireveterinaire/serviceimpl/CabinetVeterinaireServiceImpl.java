@@ -29,194 +29,167 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class CabinetVeterinaireServiceImpl implements CabinetVeterinaireService {
-
     private static final Logger logger = LoggerFactory.getLogger(CabinetVeterinaireServiceImpl.class);
-    private static final DecimalFormat decimalFormat = new DecimalFormat("#");
 
     private final CabinetVeterinaireRepository cabinetVeterinaireRepository;
     private final OurVeterinaireRepository ourVeterinaireRepository;
-    private final HttpClient httpClient;
 
     public CabinetVeterinaireServiceImpl(CabinetVeterinaireRepository cabinetVeterinaireRepository,
-                                         OurVeterinaireRepository ourVeterinaireRepository) {
+                                        OurVeterinaireRepository ourVeterinaireRepository) {
         this.cabinetVeterinaireRepository = cabinetVeterinaireRepository;
         this.ourVeterinaireRepository = ourVeterinaireRepository;
-        this.httpClient = HttpClient.newHttpClient();
     }
 
     @Override
-    public void saveFromExcel(MultipartFile file) throws Exception {
-        try (InputStream is = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(is)) {
+    public CabinetVeterinaire saveCabinet(CabinetVeterinaire cabinet) throws Exception {
+        if (cabinet == null) {
+            logger.error("Le cabinet vétérinaire fourni est null.");
+            throw new IllegalArgumentException("Le cabinet vétérinaire ne peut pas être null.");
+        }
 
-            Sheet sheet = workbook.getSheetAt(0);
+        if (cabinet.getName() == null || cabinet.getName().trim().isEmpty()) {
+            logger.error("Le nom du cabinet est requis.");
+            throw new IllegalArgumentException("Le nom du cabinet est requis.");
+        }
 
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // skip header
+        if (cabinet.getAddress() == null || cabinet.getAddress().trim().isEmpty()) {
+            logger.error("L'adresse du cabinet est requise.");
+            throw new IllegalArgumentException("L'adresse du cabinet est requise.");
+        }
 
-                Cell nomVeterinaireCell = row.getCell(0);
-                Cell adresseCell = row.getCell(1);
-                Cell phoneCell = row.getCell(2);
-                Cell matriculeCell = row.getCell(3);
+        if (cabinet.getMatricule() == null || cabinet.getMatricule().trim().isEmpty()) {
+            logger.error("Le matricule du cabinet est requis.");
+            throw new IllegalArgumentException("Le matricule du cabinet est requis.");
+        }
 
-                String matricule = getCellValueAsString(matriculeCell).trim();
-                String name = getCellValueAsString(nomVeterinaireCell).trim();
-                String address = getCellValueAsString(adresseCell).trim();
-                String phone = getCellValueAsString(phoneCell).trim();
+        // Validate matricule exists in OurVeterinaire
+        Optional<OurVeterinaire> vet = ourVeterinaireRepository.findByMatricule(cabinet.getMatricule());
+        if (vet.isEmpty()) {
+            logger.error("Le matricule {} n'existe pas dans la table OurVeterinaire.", cabinet.getMatricule());
+            throw new IllegalArgumentException("Le matricule " + cabinet.getMatricule() + " n'existe pas dans la table OurVeterinaire.");
+        }
 
-                if (matricule.isEmpty() || address.isEmpty() || name.isEmpty()) {
-                    logger.warn("Skipping row {}: Missing matricule, name or address", row.getRowNum());
-                    continue;
-                }
+        // Check for duplicate location (same latitude, longitude, and address)
+        Optional<CabinetVeterinaire> existingByLocation = cabinetVeterinaireRepository
+                .findByLatitudeAndLongitudeAndAddress(cabinet.getLatitude(), cabinet.getLongitude(), cabinet.getAddress());
+        if (existingByLocation.isPresent() && !existingByLocation.get().getName().equals(cabinet.getName())) {
+            logger.error("Un cabinet vétérinaire existe déjà à cette adresse et localisation (latitude: {}, longitude: {}).",
+                    cabinet.getLatitude(), cabinet.getLongitude());
+            throw new IllegalArgumentException("Un cabinet vétérinaire existe déjà à cette adresse et localisation.");
+        }
 
-                Optional<OurVeterinaire> optionalVeterinaire = ourVeterinaireRepository.findByMatricule(matricule);
-                if (optionalVeterinaire.isEmpty()) {
-                    logger.warn("Skipping row {}: matricule {} not found in OurVeterinaire table", row.getRowNum(), matricule);
-                    continue;
-                }
-
-                Optional<CabinetVeterinaire> optionalCabinet =
-                        cabinetVeterinaireRepository.findByNameAndAddress(name, address);
-
-                CabinetVeterinaire cabinet;
-                boolean updated = false;
-
-                if (optionalCabinet.isPresent()) {
-                    cabinet = optionalCabinet.get();
-
-                    if ((cabinet.getPhone() == null || cabinet.getPhone().isEmpty()) && !phone.isEmpty()) {
-                        cabinet.setPhone(phone);
-                        updated = true;
-                    }
-
-                    if (cabinet.getLatitude() == null || cabinet.getLongitude() == null) {
-                        String[] latLong = geocodeSmart(address);
-                        if (latLong != null) {
-                            cabinet.setLatitude(latLong[0]);
-                            cabinet.setLongitude(latLong[1]);
-                            updated = true;
-                        }
-                    }
-
-                    if (updated) {
-                        cabinetVeterinaireRepository.save(cabinet);
-                        logger.info("✅ Updated existing cabinet {} with new data", name);
-                    } else {
-                        logger.info("ℹ️ No updates needed for existing cabinet {}", name);
-                    }
-
-                } else {
-                    cabinet = new CabinetVeterinaire();
-                    cabinet.setName(name);
-                    cabinet.setAddress(address);
-                    cabinet.setPhone(!phone.isEmpty() ? phone : null);
-                    cabinet.setFeatured(false);
-                    cabinet.setType("BOUTIQUE");
-
-                    String[] latLong = geocodeSmart(address);
-                    if (latLong != null) {
-                        cabinet.setLatitude(latLong[0]);
-                        cabinet.setLongitude(latLong[1]);
-                    } else {
-                        // Fallback sur le Bardo ou Tunis
-                        cabinet.setLatitude("36.8090");
-                        cabinet.setLongitude("10.1403");
-                        logger.warn("⚠️ Geocoding failed for '{}', fallback to Bardo center", address);
-                    }
-
-                    cabinetVeterinaireRepository.save(cabinet);
-                    logger.info("✅ Saved new cabinet {} for matricule {}", name, matricule);
-                }
-
-                // Respect Nominatim : 1 requête/seconde
-                Thread.sleep(1000);
-            }
-        } catch (IOException e) {
-            logger.error("❌ Error processing Excel file: {}", e.getMessage());
-            throw new Exception("Erreur lors du traitement du fichier Excel", e);
+        // Check if a cabinet with the same name exists
+        Optional<CabinetVeterinaire> existingByName = cabinetVeterinaireRepository.findByName(cabinet.getName());
+        if (existingByName.isPresent()) {
+            // Update existing cabinet
+            CabinetVeterinaire existing = existingByName.get();
+            existing.setName(cabinet.getName());
+            existing.setAddress(cabinet.getAddress());
+            existing.setCity(cabinet.getCity());
+            existing.setPhone(cabinet.getPhone());
+            existing.setLatitude(cabinet.getLatitude());
+            existing.setLongitude(cabinet.getLongitude());
+            existing.setFeatured(cabinet.isFeatured());
+            existing.setType(cabinet.getType());
+            existing.setMatricule(cabinet.getMatricule());
+            logger.info("Mise à jour du cabinet vétérinaire: {}", cabinet.getName());
+            return cabinetVeterinaireRepository.save(existing);
+        } else {
+            // Create new cabinet
+            logger.info("Création d'un nouveau cabinet vétérinaire: {}", cabinet.getName());
+            return cabinetVeterinaireRepository.save(cabinet);
         }
     }
 
-    private String getCellValueAsString(Cell cell) {
-        if (cell == null) return "";
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().trim();
-            case NUMERIC:
-                return decimalFormat.format(cell.getNumericCellValue()).trim();
-            default:
-                return "";
+    @Override
+    public CabinetVeterinaire updateCabinet(Long id, CabinetVeterinaire cabinet) throws Exception {
+        if (id == null) {
+            logger.error("L'ID du cabinet est null.");
+            throw new IllegalArgumentException("L'ID du cabinet est requis.");
         }
+
+        if (cabinet == null) {
+            logger.error("Le cabinet vétérinaire fourni est null.");
+            throw new IllegalArgumentException("Le cabinet vétérinaire ne peut pas être null.");
+        }
+
+        if (cabinet.getName() == null || cabinet.getName().trim().isEmpty()) {
+            logger.error("Le nom du cabinet est requis.");
+            throw new IllegalArgumentException("Le nom du cabinet est requis.");
+        }
+
+        if (cabinet.getAddress() == null || cabinet.getAddress().trim().isEmpty()) {
+            logger.error("L'adresse du cabinet est requise.");
+            throw new IllegalArgumentException("L'adresse du cabinet est requise.");
+        }
+
+        if (cabinet.getMatricule() == null || cabinet.getMatricule().trim().isEmpty()) {
+            logger.error("Le matricule du cabinet est requis.");
+            throw new IllegalArgumentException("Le matricule du cabinet est requis.");
+        }
+
+        // Check if cabinet exists
+        Optional<CabinetVeterinaire> existing = cabinetVeterinaireRepository.findById(id);
+        if (existing.isEmpty()) {
+            logger.error("Aucun cabinet vétérinaire trouvé avec l'ID: {}", id);
+            throw new IllegalArgumentException("Aucun cabinet vétérinaire trouvé avec l'ID: " + id);
+        }
+
+        // Validate matricule exists in OurVeterinaire
+        Optional<OurVeterinaire> vet = ourVeterinaireRepository.findByMatricule(cabinet.getMatricule());
+        if (vet.isEmpty()) {
+            logger.error("Le matricule {} n'existe pas dans la table OurVeterinaire.", cabinet.getMatricule());
+            throw new IllegalArgumentException("Le matricule " + cabinet.getMatricule() + " n'existe pas dans la table OurVeterinaire.");
+        }
+
+        // Check for duplicate location (excluding the current cabinet)
+        Optional<CabinetVeterinaire> existingByLocation = cabinetVeterinaireRepository
+                .findByLatitudeAndLongitudeAndAddress(cabinet.getLatitude(), cabinet.getLongitude(), cabinet.getAddress());
+        if (existingByLocation.isPresent() && !existingByLocation.get().getId().equals(id)) {
+            logger.error("Un autre cabinet vétérinaire existe déjà à cette adresse et localisation (latitude: {}, longitude: {}).",
+                    cabinet.getLatitude(), cabinet.getLongitude());
+            throw new IllegalArgumentException("Un autre cabinet vétérinaire existe déjà à cette adresse et localisation.");
+        }
+
+        // Update cabinet
+        CabinetVeterinaire toUpdate = existing.get();
+        toUpdate.setName(cabinet.getName());
+        toUpdate.setAddress(cabinet.getAddress());
+        toUpdate.setCity(cabinet.getCity());
+        toUpdate.setPhone(cabinet.getPhone());
+        toUpdate.setLatitude(cabinet.getLatitude());
+        toUpdate.setLongitude(cabinet.getLongitude());
+        toUpdate.setFeatured(cabinet.isFeatured());
+        toUpdate.setType(cabinet.getType());
+        toUpdate.setMatricule(cabinet.getMatricule());
+        logger.info("Mise à jour du cabinet vétérinaire avec ID: {}", id);
+        return cabinetVeterinaireRepository.save(toUpdate);
     }
 
-    // --- LOGIQUE DE GÉOCODAGE INTELLIGENT ---
-
-    private String[] geocodeSmart(String address) {
-        String cleaned = normalizeAddress(address);
-
-        // Trois tentatives progressives
-        String[] attempts = {
-                cleaned,
-                cleaned.replaceAll("^[0-9]+,?", ""),        // sans numéro de rue
-                "Le Bardo, Tunis, Tunisia"                  // fallback ville
-        };
-
-        for (String a : attempts) {
-            String[] result = tryGeocode(a);
-            if (result != null) return result;
+    @Override
+    public void deleteCabinet(Long id) throws Exception {
+        if (id == null) {
+            logger.error("L'ID du cabinet est null.");
+            throw new IllegalArgumentException("L'ID du cabinet est requis.");
         }
-        logger.error("❌ All geocoding attempts failed for: {}", address);
-        return null;
+
+        if (!cabinetVeterinaireRepository.existsById(id)) {
+            logger.error("Aucun cabinet vétérinaire trouvé avec l'ID: {}", id);
+            throw new IllegalArgumentException("Aucun cabinet vétérinaire trouvé avec l'ID: " + id);
+        }
+
+        cabinetVeterinaireRepository.deleteById(id);
+        logger.info("Cabinet vétérinaire avec l'ID {} supprimé.", id);
     }
 
-    private String normalizeAddress(String address) {
-        return address
-                .replaceAll("[,–/]", " ")    // remplace la ponctuation
-                .replaceAll("\\s+", " ")     // espaces multiples
-                .replace("Cité", "")
-                .replace("Résidence", "")
-                .trim() + ", Tunis, Tunisia";
-    }
-
-    private String[] tryGeocode(String address) {
-        try {
-            String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
-            String url = "https://nominatim.openstreetmap.org/search?q=" +
-                    encodedAddress + "&format=json&limit=1&countrycodes=tn";
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("User-Agent", "vitalfeed-veterinaire-app/1.0 (contact@vitalfeed.com)")
-                    .header("Accept-Language", "fr")
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                JSONArray jsonArray = new JSONArray(response.body());
-                if (jsonArray.isEmpty()) {
-                    logger.warn("⚠️ No results found for address: {}", address);
-                    return null;
-                }
-
-                JSONObject result = jsonArray.getJSONObject(0);
-                String lat = result.getString("lat");
-                String lon = result.getString("lon");
-
-                logger.info("📍 Geocoding success for '{}' → {}, {}", address, lat, lon);
-                return new String[]{lat, lon};
-            } else {
-                logger.warn("⚠️ Nominatim returned status {} for {}", response.statusCode(), address);
-            }
-
-        } catch (Exception e) {
-            logger.warn("⚠️ Geocoding error for '{}': {}", address, e.getMessage());
-        }
-        return null;
+    @Override
+    public List<CabinetVeterinaire> getAllCabinets() {
+        logger.info("Récupération de tous les cabinets vétérinaires.");
+        return cabinetVeterinaireRepository.findAll();
     }
 }

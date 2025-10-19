@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/products/all").permitAll()
                      //  .requestMatchers("/api/veterinaires/update").permitAll()
                         .requestMatchers("/api/veterinaires/**").permitAll()
-
+                        .requestMatchers("/api/cabinets/all").permitAll()
 
 
 
