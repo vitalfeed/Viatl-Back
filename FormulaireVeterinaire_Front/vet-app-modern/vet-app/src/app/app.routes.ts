@@ -9,6 +9,7 @@ import { AdminComponent } from './components/admin/admin.component';
 import { AdminProductsComponent } from './components/admin-products/admin-products.component';
 import { AdminSubscriptionsComponent } from './components/admin-subscriptions/admin-subscriptions.component';
 import { AdminVeterinairesComponent } from './components/admin-veterinaires/admin-veterinaires.component';
+import { AdminBoutiquesComponent } from './components/admin-boutiques/admin-boutiques.component';
 import { EspaceProprietaireComponent } from './components/espace-proprietaire/espace-proprietaire.component';
 import { OuTrouverNosProduitsComponent } from './components/ou-trouver-nos-produits/ou-trouver-nos-produits.component';
 import { EspaceVeterinaireComponent } from './components/espace-veterinaire/espace-veterinaire.component';
@@ -30,6 +31,7 @@ export const routes: Routes = [
       { path: '', component: AdminDashboardComponent },
       { path: 'subscriptions', component: AdminSubscriptionsComponent },
       { path: 'veterinaires', component: AdminVeterinairesComponent },
+      { path: 'boutiques', component: AdminBoutiquesComponent },
       { path: 'products', component: AdminProductsComponent },
       { path: 'users', component: AdminComponent }
     ]
