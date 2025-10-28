@@ -58,7 +58,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.createDisplayProducts();
         this.isLoading = false;
         this.startAutoSlide();
-        console.log('Products loaded:', products.length);
       },
       error: (error) => {
         console.error('Error loading products:', error);
@@ -117,7 +116,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   addToCart(product: Product) {
     this.cartService.addToCart(product);
-    console.log('Produit ajouté au panier:', product.name);
   }
 
   /**
@@ -229,11 +227,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle image load error
+   * Handle image load error - use a simple placeholder
    */
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = '/assets/images/default-product.jpg';
-    img.onerror = null; // Prevent infinite loop
+    // Remove error handler FIRST to prevent infinite loop
+    img.onerror = null;
+    // Use a simple SVG placeholder instead of trying to load a missing image
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect fill="%23f3f4f6" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%239ca3af"%3EProduit%3C/text%3E%3C/svg%3E';
   }
 }

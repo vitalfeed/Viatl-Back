@@ -1,107 +1,4 @@
-<!-- Navbar -->
-<header class="bg-white sticky top-0 z-50 border-b border-gray-300">
-  <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center py-4">
-      <div class="flex items-center gap-4">
-        <!-- Hamburger Menu Button -->
-        <button (click)="toggleMenu()"
-          class="flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-          [class.active]="menuOpen">
-          <span class="block w-6 h-0.5 bg-vet-blue transition-all duration-300" [class.rotate-45]="menuOpen"
-            [class.translate-y-1.5]="menuOpen"></span>
-          <span class="block w-6 h-0.5 bg-vet-blue mt-1.5 transition-all duration-300"
-            [class.opacity-0]="menuOpen"></span>
-          <span class="block w-6 h-0.5 bg-vet-blue mt-1.5 transition-all duration-300" [class.-rotate-45]="menuOpen"
-            [class.-translate-y-1.5]="menuOpen"></span>
-        </button>
-
-        <!-- Logo -->
-        <div class="flex items-center cursor-default">
-          <div class="w-10 h-10 bg-vet-blue/10 rounded-full flex items-center justify-center mr-3">
-            <svg class="w-6 h-6 text-vet-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
-              </path>
-            </svg>
-          </div>
-          <span class="text-xl font-bold text-vet-blue">VITALFEED</span>
-        </div>
-      </div>
-      <nav class="flex items-center space-x-4">
-        <!-- Cart Button -->
-        <button (click)="navigateToPanier()"
-          class="relative flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer">
-          <svg class="w-6 h-6 text-vet-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
-            </path>
-          </svg>
-          <span *ngIf="cartCount > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-            {{ cartCount }}
-          </span>
-        </button>
-
-        <!-- Profile Dropdown -->
-        <div class="profile-dropdown-container relative">
-          <button (click)="toggleProfileDropdown()" 
-            class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 group">
-            <div class="w-10 h-10 bg-gradient-to-br from-vet-blue to-blue-600 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-              </svg>
-            </div>
-            <div class="hidden md:block text-left">
-              <div class="text-sm font-semibold text-gray-800">
-                <span class="text-vet-blue">Dr.</span> {{ userFullName || 'Vétérinaire' }}
-              </div>
-            </div>
-            <svg class="w-4 h-4 text-gray-600 group-hover:text-vet-blue transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-
-          <!-- Dropdown Menu -->
-          <div *ngIf="showProfileDropdown" 
-            class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-            <!-- User Info Header -->
-            <div class="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-green-50">
-              <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-vet-blue to-blue-600 rounded-full flex items-center justify-center shadow-md">
-                  <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <div class="font-bold text-gray-800">
-                    <span class="text-vet-blue">Dr.</span> {{ userFullName || 'Vétérinaire' }}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <button (click)="openPasswordModal()" 
-              class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-3 transition-colors duration-200">
-              <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-              </svg>
-              <span class="text-gray-700">Changer mot de passe</span>
-            </button>
-            <div class="border-t border-gray-200 my-2"></div>
-            <button (click)="logout()"
-              class="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center space-x-3 transition-colors duration-200">
-              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-              </svg>
-              <span class="text-red-600 font-semibold">Déconnexion</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-    </div>
-  </div>
-</header>
+<!-- Navbar is provided by app component, no need for duplicate navbar here -->
 
 <!-- Products Section -->
 <section class="py-6 bg-white">
@@ -173,39 +70,36 @@
     </div>
 
     <!-- Products Grid -->
-    <div *ngIf="!isLoading && !errorMessage" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+    <div *ngIf="!isLoading && !errorMessage" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
       <div *ngFor="let product of getPaginatedProducts(); trackBy: trackByProductId"
         class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 product-card overflow-hidden"
         [class.highlighted-product]="highlightedProductId === product.id">
         <div class="relative">
           <div
-            class="w-full h-48 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
-            <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain p-4"
+            class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
+            <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name + ' - ' + product.description" class="w-full h-full object-contain p-3"
               (error)="onImageError($event)" loading="lazy">
           </div>
-          <div class="absolute top-4 right-4">
-            <span class="bg-blue-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">{{
+          <div class="absolute top-2 right-2">
+            <span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">{{
               getSubCategoryLabel(product.subCategory)
               }}</span>
           </div>
-          <div class="absolute top-4 left-4" *ngIf="!product.inStock">
-            <span class="bg-red-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">Rupture</span>
+          <div class="absolute top-2 left-2" *ngIf="!product.inStock">
+            <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">Rupture</span>
           </div>
         </div>
-        <div class="p-6">
-          <h3 class="text-xl font-bold mb-3 text-gray-800 min-h-[3.5rem]">{{ product.name }}</h3>
-          <p class="text-gray-600 mb-4 text-sm line-clamp-2 min-h-[2.5rem]">{{ product.description }}</p>
-          <div class="flex items-center justify-between mb-5">
-            <div class="flex items-center">
-              <span class="text-sm px-3 py-1.5 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category
-                }}</span>
-            </div>
-            <div class="text-2xl font-bold text-vet-blue">{{ product.price | number:'1.2-2' }} TND</div>
+        <div class="p-4">
+          <h3 class="text-base font-bold mb-2 text-gray-800 min-h-[2.5rem] line-clamp-2">{{ product.name }}</h3>
+          <p class="text-gray-600 mb-3 text-xs line-clamp-2 min-h-[2rem]">{{ product.description }}</p>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category }}</span>
+            <div class="text-lg font-bold text-vet-blue">{{ product.price | number:'1.2-2' }} TND</div>
           </div>
-          <div class="flex gap-3">
+          <div class="flex flex-col gap-2">
             <a [href]="product.detailsUrl" target="_blank" rel="noopener noreferrer"
-              class="flex-1 flex items-center justify-center text-vet-blue hover:text-blue-700 hover:bg-blue-50 font-medium transition-all duration-200 py-3 px-4 rounded-lg border border-vet-blue">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="w-full flex items-center justify-center text-vet-blue hover:text-blue-700 hover:bg-blue-50 font-medium text-sm transition-all duration-200 py-2 px-3 rounded-lg border border-vet-blue">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -215,9 +109,9 @@
               Détails
             </a>
             <button
-              class="flex-1 bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full bg-vet-blue hover:bg-blue-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               (click)="addToCart(product)" [disabled]="!product.inStock">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
                 </path>

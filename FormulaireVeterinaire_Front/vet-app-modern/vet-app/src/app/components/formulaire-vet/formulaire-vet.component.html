@@ -217,7 +217,7 @@
             </div>
 
             <div *ngIf="imagePreview" class="relative">
-              <img [src]="imagePreview" alt="Preview" class="max-h-64 mx-auto rounded-lg mb-4">
+              <img [src]="imagePreview" alt="Aperçu de l'image téléchargée" class="max-h-64 mx-auto rounded-lg mb-4" loading="lazy">
               <button 
                 type="button"
                 (click)="removeImage()"

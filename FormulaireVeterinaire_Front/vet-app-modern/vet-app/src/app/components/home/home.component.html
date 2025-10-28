@@ -33,7 +33,7 @@
       <div class="md:w-1/2 mt-10 md:mt-0 fade-in">
         <div class="relative flex justify-center items-center">
           <div class="hero-image-wrapper">
-            <img src="assets/images/CatDog.jpg" alt="Chat et Chien" class="hero-image">
+            <img src="assets/images/CatDog.jpg" alt="Chat et chien ensemble - Soins vétérinaires pour animaux de compagnie" class="hero-image" loading="lazy">
           </div>
         </div>
       </div>
@@ -183,7 +183,7 @@
               <div class="relative">
                 <div
                   class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 rounded-t-xl flex items-center justify-center overflow-hidden">
-                  <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain p-3"
+                  <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name + ' - ' + product.description" class="w-full h-full object-contain p-3"
                     (error)="onImageError($event)" loading="lazy">
                 </div>
                 <div class="absolute top-3 right-3">

@@ -38,8 +38,8 @@ export const routes: Routes = [
   },
   { path: 'espace-proprietaire', component: EspaceProprietaireComponent },
   { path: 'ou-trouver-nos-produits', component: OuTrouverNosProduitsComponent },
-  { path: 'espace-veterinaire', component: EspaceVeterinaireComponent },
-  { path: 'produits-veterinaire', component: ProduitsVeterinaireComponent },
+  { path: 'espace-veterinaire', component: EspaceVeterinaireComponent, canActivate: [authGuard] },
+  { path: 'produits-veterinaire', component: ProduitsVeterinaireComponent, canActivate: [authGuard] },
   { path: 'panier', component: PanierComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' },
 ];

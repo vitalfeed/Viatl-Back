@@ -13,6 +13,18 @@
         <span class="text-xl font-bold text-vet-blue">VITALFEED</span>
       </div>
       <nav class="flex items-center space-x-4">
+        <!-- Cart Button -->
+        <button routerLink="/produits-veterinaire"
+          class="relative flex items-center justify-center w-10 h-10 bg-vet-blue hover:bg-blue-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 5M7 13v6a2 2 0 002 2h6a2 2 0 002-2v-6m-9 0h9"></path>
+          </svg>
+          <span *ngIf="cartCount > 0"
+            class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{
+            cartCount }}</span>
+        </button>
+        
         <!-- Profile Dropdown -->
         <div class="profile-dropdown-container relative">
           <button (click)="toggleProfileDropdown()"
@@ -325,7 +337,7 @@
               <div class="relative">
                 <div
                   class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 rounded-t-xl flex items-center justify-center overflow-hidden">
-                  <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain p-3"
+                  <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name + ' - ' + product.description" class="w-full h-full object-contain p-3"
                     (error)="onImageError($event)" loading="lazy">
                 </div>
                 <div class="absolute top-3 right-3">
@@ -417,8 +429,8 @@
   </div>
 </section>
 
-<!-- Decorative Divider (only shown if CTA is visible) -->
-<div class="relative py-8 bg-gradient-to-b from-white to-purple-50" *ngIf="userStatus !== 'ACTIVE'">
+<!-- Decorative Divider -->
+<div class="relative py-8 bg-gradient-to-b from-white to-purple-50">
   <div class="container max-w-7xl mx-auto px-4">
     <div class="flex items-center justify-center">
       <div class="flex-grow border-t-2 border-purple-200 max-w-md"></div>
@@ -432,8 +444,8 @@
   </div>
 </div>
 
-<!-- CTA Section - Only show if user status is not ACTIVE -->
-<section class="cta-section" *ngIf="userStatus !== 'ACTIVE'">
+<!-- CTA Section -->
+<section class="cta-section">
   <div class="container">
     <div class="cta-card">
       <div class="cta-content">

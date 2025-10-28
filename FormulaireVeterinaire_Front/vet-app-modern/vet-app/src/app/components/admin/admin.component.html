@@ -1,16 +1,16 @@
-<!-- Subscriptions Management Page -->
+<!-- Users Management Page -->
 <div class="min-h-screen bg-gray-50">
   <div class="max-w-7xl mx-auto p-6 sm:p-8">
     <!-- Page Header -->
     <div class="mb-8 pt-4">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Gestion des Abonnements</h1>
-      <p class="text-gray-600">Gérez les demandes d'accès et les abonnements des vétérinaires</p>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Gestion des Utilisateurs</h1>
+      <p class="text-gray-600">Liste des utilisateurs vétérinaires</p>
     </div>
     
     <!-- Loading State -->
     <div *ngIf="loading" class="text-center py-12">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p class="mt-4 text-gray-600">Chargement des demandes...</p>
+      <p class="mt-4 text-gray-600">Chargement des utilisateurs...</p>
     </div>
 
     <!-- Error State -->
@@ -23,54 +23,61 @@
         <span>{{ error }}</span>
       </div>
     </div>
-    <!-- Table -->
-    <div *ngIf="!loading && demandes.length > 0">
+
+    <!-- Users Table -->
+    <div *ngIf="!loading && utilisateurs.length > 0">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Téléphone</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adresse</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° Vétérinaire</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Premier Login</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr *ngFor="let demande of paginatedDemandes" class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ demande.nom }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ demande.prenom }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ demande.email }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ demande.telephone }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ demande.adresseCabinet }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ demande.numVeterinaire }}</td>
+              <tr *ngFor="let user of paginatedUtilisateurs" class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ user.nom }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ user.prenom }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ user.email }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ user.numVeterinaire }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <button *ngIf="!hasUserForDemande(demande.id)" (click)="openCreateModal(demande)" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
-                    Créer compte
-                  </button>
-                  <button *ngIf="hasUserForDemande(demande.id)" (click)="openSubscriptionModal(demande)" 
-                    class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
-                    Voir Abonnement
-                  </button>
+                  <span *ngIf="user.admin" class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    Admin
+                  </span>
+                  <span *ngIf="!user.admin" class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                    User
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <span *ngIf="user.firstLogin" class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Oui
+                  </span>
+                  <span *ngIf="!user.firstLogin" class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    Non
+                  </span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
       <!-- Pagination -->
       <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg">
         <div class="flex-1 flex justify-between sm:hidden">
           <button (click)="setPage(page-1)" [disabled]="page === 1" 
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
             Précédent
           </button>
           <button (click)="setPage(page+1)" [disabled]="page === totalPages" 
-            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
             Suivant
           </button>
         </div>
@@ -78,12 +85,13 @@
           <div>
             <p class="text-sm text-gray-700">
               Page <span class="font-medium">{{ page }}</span> sur <span class="font-medium">{{ totalPages }}</span>
+              - Total: <span class="font-medium">{{ utilisateurs.length }}</span> utilisateurs
             </p>
           </div>
           <div>
             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
               <button (click)="setPage(page-1)" [disabled]="page === 1" 
-                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
                 </svg>
@@ -96,7 +104,7 @@
                 </button>
               </ng-container>
               <button (click)="setPage(page+1)" [disabled]="page === totalPages" 
-                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                 </svg>
@@ -108,72 +116,12 @@
     </div>
 
     <!-- Empty State -->
-    <div *ngIf="!loading && demandes.length === 0 && !error" class="text-center py-12">
+    <div *ngIf="!loading && utilisateurs.length === 0 && !error" class="text-center py-12">
       <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
       </svg>
-      <p class="mt-4 text-gray-600">Aucune demande trouvée</p>
+      <p class="mt-4 text-gray-600">Aucun utilisateur trouvé</p>
     </div>
   </div>
-</div> 
-
-<!-- Modal création compte -->
-<div *ngIf="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-  <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md relative animate-fade-in">
-    <button (click)="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-    <h2 class="text-2xl font-bold text-vet-blue mb-6 text-center">Créer un compte utilisateur</h2>
-    <div class="mb-4">
-      <label class="block text-gray-700 font-medium mb-2">Durée d'abonnement</label>
-      <select [(ngModel)]="selectedSubscription" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-vet-blue focus:border-transparent">
-        <option value="" disabled selected>Choisir la durée</option>
-        <option value="SIX_MONTHS">6 mois</option>
-        <option value="ONE_YEAR">1 an</option>
-      </select>
-    </div>
-    <div class="mb-4">
-      <label class="block text-gray-700 font-medium mb-2">Valider La Création De Ce Compte</label>
-      <input type="text" [(ngModel)]="validationText" placeholder="Tapez : valider le compte" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-vet-blue focus:border-transparent" />
-      <small class="text-gray-400">Pour confirmer, saisissez exactement : <b>valider le compte</b></small>
-    </div>
-    <button (click)="createUserFromDemande()" [disabled]="!canCreate() || creating" class="w-full bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center mb-2">
-      <svg *ngIf="creating" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      {{ creating ? 'Création...' : 'Créer' }}
-    </button>
-    <div *ngIf="notification" class="mt-4 flex flex-col items-center justify-center">
-      <div [ngClass]="notification.includes('succès') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'" class="rounded-lg px-4 py-3 flex items-center gap-2 text-center">
-        <svg *ngIf="notification.includes('succès')" class="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        <span>{{ notification }}</span>
-      </div>
-    </div>
-  </div>
-</div> 
-
-<!-- Modal abonnement -->
-<div *ngIf="showSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-  <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md relative animate-fade-in">
-    <button (click)="closeSubscriptionModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-    <h2 class="text-2xl font-bold text-green-500 mb-6 text-center">Informations Sur L'abonnement</h2>
-    <div class="space-y-4">
-      <div class="flex flex-col">
-        <span class="text-gray-500 text-xs font-medium mb-1">Type d'abonnement</span>
-        <div class="px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 font-semibold">{{ subscriptionInfo?.type || '-' }}</div>
-      </div>
-      <div class="flex flex-col">
-        <span class="text-gray-500 text-xs font-medium mb-1">Statut d'abonnement</span>
-        <div class="px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 font-semibold">{{ subscriptionInfo?.status || '-' }}</div>
-      </div>
-      <div class="flex flex-col">
-        <span class="text-gray-500 text-xs font-medium mb-1">Date d'abonnement</span>
-        <div class="px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 font-semibold">{{ subscriptionInfo?.startDate || '-' }}</div>
-      </div>
-      <div class="flex flex-col">
-        <span class="text-gray-500 text-xs font-medium mb-1">Date d'expiration</span>
-        <div class="px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 font-semibold">{{ subscriptionInfo?.endDate || '-' }}</div>
-      </div>
-    </div>
-  </div>
-</div> 
+</div>

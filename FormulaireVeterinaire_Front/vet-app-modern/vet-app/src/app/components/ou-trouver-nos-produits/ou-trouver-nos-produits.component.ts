@@ -159,7 +159,6 @@ export class OuTrouverNosProduitsComponent implements OnInit, AfterViewInit {
           this.currentPage = 1;
           this.updatePagination();
           this.loading = false;
-          console.log('Loaded locations:', this.locations);
 
           // Update map markers after loading
           if (this.map) {

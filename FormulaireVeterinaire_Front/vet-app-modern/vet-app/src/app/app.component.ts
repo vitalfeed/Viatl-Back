@@ -1,14 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterModule } from '@angular/router';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { filter } from 'rxjs/operators';
 import { CartService } from './services/cart.service';
 import { AuthMonitorService } from './services/auth-monitor.service';
+import { AuthService } from './services/auth.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, HttpClientModule, ReactiveFormsModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -18,8 +22,23 @@ export class AppComponent implements OnInit {
   cartItemsCount: number = 0;
   selectedProductFilter: string = 'tous';
   selectedSubType: string = '';
-  sidebarOpen: boolean = true;
-  produitsSidebarOpen: boolean = true;
+  sidebarOpen: boolean = false;
+  produitsSidebarOpen: boolean = false;
+  showProfileDropdown: boolean = false;
+  userFullName: string = '';
+  
+  // Password modal
+  showPasswordModal: boolean = false;
+  passwordForm: FormGroup;
+  passwordLoading: boolean = false;
+  passwordError: string = '';
+  passwordSuccess: string = '';
+  showCurrentPassword: boolean = false;
+  showNewPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+  passwordStrength: number = 0;
+  passwordStrengthText: string = '';
+  passwordStrengthColor: string = '';
   
   // Available product types based on actual products
   availableProductTypes = [
@@ -31,8 +50,17 @@ export class AppComponent implements OnInit {
   constructor(
     private router: Router, 
     private cartService: CartService,
-    private authMonitor: AuthMonitorService
+    private authMonitor: AuthMonitorService,
+    private authService: AuthService,
+    private http: HttpClient,
+    private formBuilder: FormBuilder
   ) {
+    // Initialize password form
+    this.passwordForm = this.formBuilder.group({
+      currentPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
     // Listen to route changes
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd)
@@ -41,6 +69,12 @@ export class AppComponent implements OnInit {
       // Reset filters when route changes
       this.selectedProductFilter = 'tous';
       this.selectedSubType = '';
+      
+      // Refresh user full name from localStorage on route change
+      const storedName = localStorage.getItem('userFullName');
+      if (storedName) {
+        this.userFullName = storedName;
+      }
     });
 
     // Subscribe to cart count changes
@@ -52,12 +86,19 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     // Start monitoring authentication state on route changes
     this.authMonitor.startMonitoring();
+    
+    // Load user name from localStorage
+    const storedName = localStorage.getItem('userFullName');
+    if (storedName) {
+      this.userFullName = storedName;
+    }
   }
 
   get isAdmin(): boolean {
-    const adminToken = localStorage.getItem('admin_token');
+    // With HttpOnly cookies, we can't check the token
+    // Only check if user is marked as admin and on admin route
     const isAdminFlag = localStorage.getItem('isAdmin');
-    return !!adminToken && isAdminFlag === 'true' && this.currentRoute.includes('/admin');
+    return isAdminFlag === 'true' && this.currentRoute.includes('/admin');
   }
 
   get isEspaceProprietaire(): boolean {
@@ -70,6 +111,10 @@ export class AppComponent implements OnInit {
 
   get isProduitsVeterinaire(): boolean {
     return this.currentRoute.includes('/produits-veterinaire');
+  }
+
+  get isPanier(): boolean {
+    return this.currentRoute.includes('/panier');
   }
 
   get navbarTitle(): string {
@@ -157,13 +202,146 @@ export class AppComponent implements OnInit {
     this.router.navigate(['/espace-veterinaire']);
   }
 
-  logout() {
-    localStorage.clear();
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) caches.delete(name);
-      });
+  toggleProfileDropdown() {
+    this.showProfileDropdown = !this.showProfileDropdown;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.profile-dropdown-container')) {
+      this.showProfileDropdown = false;
     }
-    window.location.href = '/';
+  }
+
+  passwordMatchValidator(form: FormGroup) {
+    const password = form.get('newPassword');
+    const confirmPassword = form.get('confirmPassword');
+    if (password && confirmPassword && password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    }
+    return null;
+  }
+
+  openPasswordModal(): void {
+    this.showPasswordModal = true;
+    this.showProfileDropdown = false;
+    this.passwordForm.reset();
+    this.passwordError = '';
+    this.passwordSuccess = '';
+    document.body.style.overflow = 'hidden';
+  }
+
+  closePasswordModal(): void {
+    this.showPasswordModal = false;
+    document.body.style.overflow = 'auto';
+    this.passwordForm.reset();
+    this.passwordError = '';
+    this.passwordSuccess = '';
+  }
+
+  toggleCurrentPasswordVisibility(): void {
+    this.showCurrentPassword = !this.showCurrentPassword;
+  }
+
+  toggleNewPasswordVisibility(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  updatePasswordStrength(password: string): void {
+    if (!password) {
+      this.passwordStrength = 0;
+      this.passwordStrengthText = '';
+      this.passwordStrengthColor = '';
+      return;
+    }
+    let strength = 0;
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    if (checks.length) strength += 20;
+    if (checks.uppercase) strength += 20;
+    if (checks.lowercase) strength += 20;
+    if (checks.number) strength += 20;
+    if (checks.special) strength += 20;
+    this.passwordStrength = strength;
+    if (strength <= 40) {
+      this.passwordStrengthText = 'Faible';
+      this.passwordStrengthColor = '#ef4444';
+    } else if (strength <= 60) {
+      this.passwordStrengthText = 'Moyen';
+      this.passwordStrengthColor = '#f59e0b';
+    } else if (strength <= 80) {
+      this.passwordStrengthText = 'Bon';
+      this.passwordStrengthColor = '#3b82f6';
+    } else {
+      this.passwordStrengthText = 'Excellent';
+      this.passwordStrengthColor = '#10b981';
+    }
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid) {
+      return;
+    }
+    this.passwordLoading = true;
+    this.passwordError = '';
+    this.passwordSuccess = '';
+    const body = {
+      currentPassword: this.passwordForm.value.currentPassword,
+      newPassword: this.passwordForm.value.newPassword
+    };
+    this.http.post(`${environment.apiUrl}/reset-password`, body, { 
+      withCredentials: true, 
+      responseType: 'text' 
+    }).subscribe({
+      next: () => {
+        this.passwordLoading = false;
+        this.passwordSuccess = 'Mot de passe modifié avec succès !';
+        setTimeout(() => {
+          this.closePasswordModal();
+        }, 2000);
+      },
+      error: (error) => {
+        this.passwordLoading = false;
+        console.error('Password change error:', error);
+        let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
+        if (error.status === 401) {
+          errorMessage = 'Session expirée. Veuillez vous reconnecter.';
+        } else if (error.status === 400) {
+          errorMessage = 'Le mot de passe actuel est incorrect.';
+        }
+        this.passwordError = errorMessage;
+      }
+    });
+  }
+
+  logout() {
+    // Call backend to clear HttpOnly cookie
+    this.http.post(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
+      next: () => {
+        localStorage.clear();
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+          });
+        }
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('Logout error:', error);
+        localStorage.clear();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 }

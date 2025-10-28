@@ -48,7 +48,6 @@ export class AuthMonitorService {
 
     // If user has credentials and navigates to a public page, clear credentials
     if (isPublicPage && (hasUserToken || hasAdminToken)) {
-      console.log('User navigated to public page, clearing credentials...');
       this.clearCredentials();
     }
   }
@@ -76,6 +75,5 @@ export class AuthMonitorService {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('userId');
-    console.log('Credentials cleared');
   }
 }

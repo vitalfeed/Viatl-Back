@@ -14,13 +14,13 @@ export class ProductService {
   constructor(private http: HttpClient) { }
 
   /**
-   * Get authorization headers with admin token
+   * Get request options with credentials
+   * Cookie is automatically sent by browser when withCredentials is true
    */
-  private getAuthHeaders() {
-    const token = localStorage.getItem('admin_token');
+  private getRequestOptions() {
     return {
+      withCredentials: true,  // Automatically includes HttpOnly cookies
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     };
@@ -42,7 +42,7 @@ export class ProductService {
    * Update a product
    */
   updateProduct(id: number, product: Partial<Product>): Observable<Product> {
-    return this.http.put<Product>(`${this.apiUrl}/update/${id}`, product, this.getAuthHeaders()).pipe(
+    return this.http.put<Product>(`${this.apiUrl}/update/${id}`, product, this.getRequestOptions()).pipe(
       catchError(this.handleUpdateError)
     );
   }
@@ -51,7 +51,7 @@ export class ProductService {
    * Delete a product
    */
   deleteProduct(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/delete/${id}`, this.getAuthHeaders()).pipe(
+    return this.http.delete<void>(`${this.apiUrl}/delete/${id}`, this.getRequestOptions()).pipe(
       catchError(this.handleDeleteError)
     );
   }
@@ -60,7 +60,7 @@ export class ProductService {
    * Add a new product
    */
   addProduct(product: Omit<Product, 'id'>): Observable<Product> {
-    return this.http.post<Product>(`${this.apiUrl}/add`, product, this.getAuthHeaders()).pipe(
+    return this.http.post<Product>(`${this.apiUrl}/add`, product, this.getRequestOptions()).pipe(
       catchError(this.handleAddError)
     );
   }

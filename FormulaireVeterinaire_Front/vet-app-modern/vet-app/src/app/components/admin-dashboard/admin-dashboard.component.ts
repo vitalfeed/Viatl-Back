@@ -1,11 +1,33 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ProductService } from '../../services/product.service';
+
+interface DashboardStats {
+  // Users & Subscriptions
+  totalUsers: number;
+  activeSubscriptions: number;
+  inactiveUsers: number;
+  expiredSubscriptions: number;
+
+  // Products
+  totalProducts: number;
+  productsByCategory: { category: string; count: number; }[];
+
+  // Boutiques
+  totalBoutiques: number;
+  featuredBoutiques: number;
+
+  // Veterinaires
+  totalVeterinaires: number;
+
+  // Recent Activity
+  recentSubscriptions: any[];
+}
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -15,82 +37,189 @@ import { ProductService } from '../../services/product.service';
   styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit {
-  stats = {
-    totalSubscriptions: 0,
+  stats: DashboardStats = {
+    totalUsers: 0,
     activeSubscriptions: 0,
+    inactiveUsers: 0,
+    expiredSubscriptions: 0,
     totalProducts: 0,
-    pendingRequests: 0
+    productsByCategory: [],
+    totalBoutiques: 0,
+    featuredBoutiques: 0,
+    totalVeterinaires: 0,
+    recentSubscriptions: []
   };
 
   loading = true;
   error = '';
 
+  // Chart data
+  subscriptionChartData: any[] = [];
+  productChartData: any[] = [];
+
   constructor(
     private http: HttpClient,
     private productService: ProductService
-  ) {}
+  ) { }
 
   ngOnInit() {
-    this.loadStats();
+    this.loadDashboardData();
   }
 
-  private getAuthHeaders() {
-    const token = localStorage.getItem('admin_token');
+  /**
+   * Get request options with credentials
+   */
+  private getRequestOptions() {
     return {
-      headers: new HttpHeaders({
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      })
+      withCredentials: true
     };
   }
 
-  loadStats() {
+  /**
+   * Load all dashboard data
+   */
+  loadDashboardData() {
     this.loading = true;
     this.error = '';
 
-    // Fetch all data in parallel with individual error handling
     forkJoin({
+      users: this.http.get<any[]>(`${environment.apiUrl}/users/all`, this.getRequestOptions()).pipe(
+        catchError(err => {
+          console.error('Error loading users:', err);
+          return of([]);
+        })
+      ),
+      subscriptions: this.http.get<any[]>(`${environment.apiUrl}/subscriptions/all`, this.getRequestOptions()).pipe(
+        catchError(err => {
+          console.error('Error loading subscriptions:', err);
+          return of([]);
+        })
+      ),
       products: this.productService.getAllProducts().pipe(
         catchError(err => {
           console.error('Error loading products:', err);
           return of([]);
         })
       ),
-      users: this.http.get<any[]>(`${environment.apiUrl}/users`, this.getAuthHeaders()).pipe(
+      boutiques: this.http.get<any[]>(`${environment.apiUrl}/cabinets/all`, this.getRequestOptions()).pipe(
         catchError(err => {
-          console.error('Error loading users:', err);
+          console.error('Error loading boutiques:', err);
           return of([]);
         })
       ),
-      demandes: this.http.get<any[]>(`${environment.apiUrl}/demandes`, this.getAuthHeaders()).pipe(
+      veterinaires: this.http.get<any[]>(`${environment.apiUrl}/veterinaires/all`, this.getRequestOptions()).pipe(
         catchError(err => {
-          console.error('Error loading demandes:', err);
+          console.error('Error loading veterinaires:', err);
           return of([]);
         })
       )
     }).subscribe({
       next: (data) => {
-        // Count products
-        this.stats.totalProducts = data.products?.length || 0;
-
-        // Count users with subscriptions
-        const users = data.users || [];
-        const usersWithSubscriptions = users.filter((user: any) => user.subscription);
-        this.stats.totalSubscriptions = usersWithSubscriptions.length;
-        this.stats.activeSubscriptions = usersWithSubscriptions.filter((user: any) => 
-          user.subscription?.status === 'ACTIVE'
-        ).length;
-
-        // Count pending requests
-        this.stats.pendingRequests = data.demandes?.length || 0;
-
+        this.processData(data);
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error loading dashboard stats:', err);
-        this.error = 'Erreur lors du chargement des statistiques';
+        console.error('Error loading dashboard data:', err);
+        this.error = 'Erreur lors du chargement du tableau de bord';
         this.loading = false;
       }
     });
+  }
+
+  /**
+   * Process all data and calculate statistics
+   */
+  private processData(data: any) {
+    // Users statistics
+    const users = data.users || [];
+    this.stats.totalUsers = users.length;
+    this.stats.inactiveUsers = users.filter((u: any) => u.status === 'INACTIVE').length;
+
+    // Subscriptions statistics
+    const subscriptions = data.subscriptions || [];
+    this.stats.activeSubscriptions = subscriptions.filter((s: any) => s.user?.status === 'ACTIVE').length;
+    this.stats.expiredSubscriptions = subscriptions.filter((s: any) => s.user?.status === 'EXPIRED').length;
+
+    // Recent subscriptions (last 5)
+    this.stats.recentSubscriptions = subscriptions
+      .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+      .slice(0, 5);
+
+    // Subscription chart data
+    this.subscriptionChartData = [
+      { label: 'Actifs', value: this.stats.activeSubscriptions, color: '#10b981' },
+      { label: 'Inactifs', value: this.stats.inactiveUsers, color: '#6b7280' },
+      { label: 'Expirés', value: this.stats.expiredSubscriptions, color: '#ef4444' }
+    ];
+
+    // Products statistics
+    const products = data.products || [];
+    this.stats.totalProducts = products.length;
+
+    // Products by category
+    const categoryCount: any = {};
+    products.forEach((p: any) => {
+      const cat = p.category || 'Autre';
+      categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+    });
+
+    this.stats.productsByCategory = Object.entries(categoryCount).map(([category, count]) => ({
+      category,
+      count: count as number
+    }));
+
+    // Product chart data
+    this.productChartData = this.stats.productsByCategory.map(item => ({
+      label: item.category === 'CHIEN' ? '🐶 Chien' : item.category === 'CHAT' ? '🐱 Chat' : item.category,
+      value: item.count,
+      color: item.category === 'CHIEN' ? '#3b82f6' : '#ef4444'
+    }));
+
+    // Boutiques statistics
+    const boutiques = data.boutiques || [];
+    this.stats.totalBoutiques = boutiques.filter((b: any) => b.type === 'BOUTIQUE').length;
+    this.stats.featuredBoutiques = boutiques.filter((b: any) => b.featured === true).length;
+
+    // Veterinaires statistics
+    this.stats.totalVeterinaires = (data.veterinaires || []).length;
+  }
+
+  /**
+   * Get subscription type label
+   */
+  getSubscriptionLabel(type: string): string {
+    const labels: any = {
+      'ONE_MONTH': '1 mois',
+      'THREE_MONTHS': '3 mois',
+      'SIX_MONTHS': '6 mois',
+      'ONE_YEAR': '1 an'
+    };
+    return labels[type] || type;
+  }
+
+  /**
+   * Format date
+   */
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  /**
+   * Get percentage for chart
+   */
+  getPercentage(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
+  }
+
+  /**
+   * Refresh dashboard
+   */
+  refresh() {
+    this.loadDashboardData();
   }
 }

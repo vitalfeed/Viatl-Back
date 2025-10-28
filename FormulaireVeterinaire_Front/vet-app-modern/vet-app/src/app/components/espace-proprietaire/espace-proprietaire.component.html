@@ -77,47 +77,47 @@
     </div>
 
     <!-- Products Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
       <div *ngFor="let product of getPaginatedProducts(); trackBy: trackByProductId"
         class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 product-card overflow-hidden"
         [class.highlighted-product]="highlightedProductId === product.id">
 
         <div class="relative">
           <div
-            class="w-full h-48 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
-            <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain p-4"
+            class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
+            <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name" class="w-full h-full object-contain p-3"
               (error)="onImageError($event)" loading="lazy">
           </div>
-          <div class="absolute top-4 right-4">
-            <span class="bg-blue-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">{{
+          <div class="absolute top-2 right-2">
+            <span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">{{
               product.subCategory === 'ALIMENT' ? 'Aliment' : product.subCategory === 'COMPLEMENT' ? 'Complément' :
               'Test rapide' }}</span>
           </div>
-          <div class="absolute top-4 left-4" *ngIf="!product.inStock">
-            <span class="bg-red-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">Rupture</span>
+          <div class="absolute top-2 left-2" *ngIf="!product.inStock">
+            <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">Rupture</span>
           </div>
         </div>
 
-        <div class="p-6">
-          <h3 class="text-xl font-bold mb-3 text-gray-800 min-h-[3.5rem]">{{ product.name }}</h3>
-          <p class="text-gray-600 mb-4 text-sm line-clamp-2 min-h-[2.5rem]">{{ product.description }}</p>
+        <div class="p-4">
+          <h3 class="text-base font-bold mb-2 text-gray-800 min-h-[2.5rem] line-clamp-2">{{ product.name }}</h3>
+          <p class="text-gray-600 mb-3 text-xs line-clamp-2 min-h-[2rem]">{{ product.description }}</p>
 
-          <div class="flex items-center mb-5">
-            <span class="text-sm px-3 py-1.5 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category
+          <div class="flex items-center mb-3">
+            <span class="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category
               }}</span>
           </div>
 
           <!-- Only Details Button (No Add to Cart) -->
           <a [href]="product.detailsUrl" target="_blank" rel="noopener noreferrer"
-            class="w-full flex items-center justify-center text-white bg-vet-blue hover:bg-blue-600 font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="w-full flex items-center justify-center text-white bg-vet-blue hover:bg-blue-600 font-medium text-sm py-2 px-3 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
               </path>
             </svg>
-            Voir les détails
+            Détails
           </a>
         </div>
       </div>

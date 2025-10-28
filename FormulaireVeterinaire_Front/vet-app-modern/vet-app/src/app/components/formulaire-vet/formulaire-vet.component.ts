@@ -42,40 +42,29 @@ export class FormulaireVetComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.checkAuthentication();
+    // No need to check authentication here - it's a public page
+    // Users can subscribe without being logged in
     this.loadUserData();
   }
 
-  checkAuthentication(): void {
-    const userToken = localStorage.getItem('user_token');
-    if (!userToken) {
-      this.router.navigate(['/login']);
-    }
-  }
-
   loadUserData(): void {
-    const userId = localStorage.getItem('userId');
-    const userToken = localStorage.getItem('user_token');
-
-    if (!userId || !userToken) {
-      this.error = 'Session expirée. Veuillez vous reconnecter.';
-      return;
-    }
-
+    // Try to load user data if they're logged in (optional)
     this.loading = true;
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${userToken}`
-    });
 
-    this.http.get(`${environment.apiUrl}/veterinaires/${userId}`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/veterinaires/me`, { withCredentials: true }).subscribe({
       next: (data) => {
         this.userData = data;
         this.loading = false;
+        
+        // Store userId if not already in localStorage
+        if (data.id || data.userId) {
+          const id = data.id || data.userId;
+          localStorage.setItem('userId', id.toString());
+        }
       },
       error: (error) => {
-        console.error('Error loading user data:', error);
-        this.error = 'Erreur lors du chargement de vos informations.';
         this.loading = false;
+        // Don't show error - it's okay if user is not logged in
       }
     });
   }
@@ -118,10 +107,10 @@ export class FormulaireVetComponent implements OnInit {
     }
 
     const userId = localStorage.getItem('userId');
-    const userToken = localStorage.getItem('user_token');
 
-    if (!userId || !userToken) {
-      this.error = 'Session expirée. Veuillez vous reconnecter.';
+    if (!userId) {
+      this.error = 'Veuillez vous connecter pour souscrire à un abonnement.';
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -134,11 +123,10 @@ export class FormulaireVetComponent implements OnInit {
     formData.append('subscriptionType', this.subscriptionForm.value.subscriptionType);
     formData.append('image', this.selectedFile);
 
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${userToken}`
-    });
-
-    this.http.post(`${environment.apiUrl}/veterinaires/update`, formData, { headers, responseType: 'text' }).subscribe({
+    this.http.post(`${environment.apiUrl}/veterinaires/update`, formData, { 
+      withCredentials: true, 
+      responseType: 'text' 
+    }).subscribe({
       next: () => {
         this.submitting = false;
         

@@ -157,8 +157,8 @@
         class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
         <!-- Product Image -->
         <div class="relative h-56 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-          <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain"
-            (error)="$any($event.target).src='assets/images/placeholder-product.png'">
+          <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name" class="w-full h-full object-contain"
+            (error)="onImageError($event)" loading="lazy">
         </div>
 
         <!-- Product Info -->
@@ -219,8 +219,8 @@
           <!-- Product Image -->
           <div
             class="relative w-full sm:w-48 h-48 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4 flex-shrink-0">
-            <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-contain"
-              (error)="$any($event.target).src='assets/images/placeholder-product.png'">
+            <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name" class="w-full h-full object-contain"
+              (error)="onImageError($event)" loading="lazy">
           </div>
 
           <!-- Product Info -->

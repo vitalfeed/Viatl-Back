@@ -75,28 +75,36 @@ export class AdminSubscriptionsComponent implements OnInit {
   }
 
   /**
-   * Get authorization headers with admin token for JSON
+   * Get request options with credentials for JSON
+   * Cookie is automatically sent by browser when withCredentials is true
    */
-  private getAuthHeaders() {
-    const token = localStorage.getItem('admin_token');
+  private getRequestOptions() {
     return {
+      withCredentials: true,
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     };
   }
 
   /**
-   * Get authorization headers with admin token for form data
+   * Get request options with credentials for form data
    */
-  private getAuthHeadersFormData() {
-    const token = localStorage.getItem('admin_token');
+  private getRequestOptionsFormData() {
     return {
+      withCredentials: true,
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       }
+    };
+  }
+
+  /**
+   * Get request options with credentials (no Content-Type for FormData)
+   */
+  private getRequestOptionsMultipart() {
+    return {
+      withCredentials: true
     };
   }
 
@@ -104,7 +112,7 @@ export class AdminSubscriptionsComponent implements OnInit {
    * Load all users
    */
   loadUsers(): void {
-    this.http.get<User[]>(`${environment.apiUrl}/users/all`, this.getAuthHeaders())
+    this.http.get<User[]>(`${environment.apiUrl}/users/all`, this.getRequestOptions())
       .subscribe({
         next: (data) => {
           this.users = data;
@@ -122,7 +130,7 @@ export class AdminSubscriptionsComponent implements OnInit {
    */
   loadSubscriptions(): void {
     this.loading = true;
-    this.http.get<Subscription[]>(`${environment.apiUrl}/subscriptions/all`, this.getAuthHeaders())
+    this.http.get<Subscription[]>(`${environment.apiUrl}/subscriptions/all`, this.getRequestOptions())
       .subscribe({
         next: (data) => {
           this.subscriptions = data;
@@ -213,12 +221,6 @@ export class AdminSubscriptionsComponent implements OnInit {
       return;
     }
 
-    const adminToken = localStorage.getItem('admin_token');
-    if (!adminToken) {
-      this.error = 'Session expirée. Veuillez vous reconnecter.';
-      return;
-    }
-
     this.assignLoading = true;
     this.error = '';
     this.successMessage = '';
@@ -231,7 +233,7 @@ export class AdminSubscriptionsComponent implements OnInit {
       `${environment.apiUrl}/subscriptions/assign/${this.selectedUserId}`,
       body.toString(),
       {
-        ...this.getAuthHeadersFormData(),
+        ...this.getRequestOptionsFormData(),
         responseType: 'text' as 'json'
       }
     ).subscribe({
@@ -399,12 +401,6 @@ export class AdminSubscriptionsComponent implements OnInit {
       return;
     }
 
-    const adminToken = localStorage.getItem('admin_token');
-    if (!adminToken) {
-      this.error = 'Session expirée. Veuillez vous reconnecter.';
-      return;
-    }
-
     this.updateLoading = true;
     this.error = '';
     this.successMessage = '';
@@ -413,18 +409,11 @@ export class AdminSubscriptionsComponent implements OnInit {
     const formData = new FormData();
     formData.append('subscriptionType', this.selectedSubscriptionType);
 
-    // Create headers for form-data (don't set Content-Type, browser will set it with boundary)
-    const headers = {
-      headers: {
-        'Authorization': `Bearer ${adminToken}`
-      }
-    };
-
     this.http.put(
       `${environment.apiUrl}/subscriptions/update/${this.selectedSubscription.id}`,
       formData,
       {
-        ...headers,
+        ...this.getRequestOptionsMultipart(),
         responseType: 'text' as 'json'
       }
     ).subscribe({
@@ -467,19 +456,13 @@ export class AdminSubscriptionsComponent implements OnInit {
       return;
     }
 
-    const adminToken = localStorage.getItem('admin_token');
-    if (!adminToken) {
-      this.error = 'Session expirée. Veuillez vous reconnecter.';
-      return;
-    }
-
     this.deleteLoading = true;
     this.error = '';
     this.successMessage = '';
 
     this.http.delete(
       `${environment.apiUrl}/subscriptions/delete/${this.selectedSubscription.id}`,
-      this.getAuthHeaders()
+      this.getRequestOptions()
     ).subscribe({
       next: () => {
         this.deleteLoading = false;

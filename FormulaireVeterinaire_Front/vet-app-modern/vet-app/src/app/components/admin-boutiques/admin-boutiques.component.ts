@@ -68,14 +68,12 @@ export class AdminBoutiquesComponent implements OnInit {
   }
 
   /**
-   * Get authorization headers
+   * Get request options with credentials
+   * Cookie is automatically sent by browser when withCredentials is true
    */
-  private getAuthHeaders() {
-    const token = localStorage.getItem('admin_token');
+  private getRequestOptions() {
     return {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      withCredentials: true
     };
   }
 
@@ -86,7 +84,7 @@ export class AdminBoutiquesComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.http.get<Boutique[]>(`${environment.apiUrl}/cabinets/all`, this.getAuthHeaders())
+    this.http.get<Boutique[]>(`${environment.apiUrl}/cabinets/all`, this.getRequestOptions())
       .subscribe({
         next: (data) => {
           this.boutiques = data.filter(b => b.type === 'BOUTIQUE');
@@ -180,7 +178,7 @@ export class AdminBoutiquesComponent implements OnInit {
     const boutiqueData = { ...this.currentBoutique };
     boutiqueData.type = 'BOUTIQUE'; // Force type to BOUTIQUE
 
-    this.http.post<any>(`${environment.apiUrl}/cabinets/add`, boutiqueData, this.getAuthHeaders())
+    this.http.post<any>(`${environment.apiUrl}/cabinets/add`, boutiqueData, this.getRequestOptions())
       .subscribe({
         next: (response) => {
           this.loading = false;
@@ -231,7 +229,7 @@ export class AdminBoutiquesComponent implements OnInit {
   updateBoutique(): void {
     const boutiqueData = { ...this.currentBoutique };
     
-    this.http.put<any>(`${environment.apiUrl}/cabinets/update/${this.currentBoutique.id}`, boutiqueData, this.getAuthHeaders())
+    this.http.put<any>(`${environment.apiUrl}/cabinets/update/${this.currentBoutique.id}`, boutiqueData, this.getRequestOptions())
       .subscribe({
         next: (response) => {
           // Immediately update in local array for instant UI update
@@ -307,7 +305,7 @@ export class AdminBoutiquesComponent implements OnInit {
     this.error = '';
 
     const options = {
-      ...this.getAuthHeaders(),
+      withCredentials: true,
       responseType: 'text' as 'json'
     };
 

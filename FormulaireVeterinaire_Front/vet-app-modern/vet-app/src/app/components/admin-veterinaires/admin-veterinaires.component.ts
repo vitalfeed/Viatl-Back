@@ -21,13 +21,13 @@ interface Veterinaire {
 export class AdminVeterinairesComponent implements OnInit {
   veterinaires: Veterinaire[] = [];
   filteredVeterinaires: Veterinaire[] = [];
-  
+
   loading = false;
   uploadLoading = false;
   error = '';
   successMessage = '';
   searchQuery = '';
-  
+
   selectedFile: File | null = null;
   isDragging = false;
   showSuccessModal = false;
@@ -37,21 +37,19 @@ export class AdminVeterinairesComponent implements OnInit {
   itemsPerPage = 5;
   paginatedVeterinaires: Veterinaire[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.loadVeterinaires();
   }
 
   /**
-   * Get authorization headers with admin token
+   * Get request options with credentials
+   * Cookie is automatically sent by browser when withCredentials is true
    */
-  private getAuthHeaders() {
-    const token = localStorage.getItem('admin_token');
+  private getRequestOptions() {
     return {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      withCredentials: true
     };
   }
 
@@ -62,7 +60,7 @@ export class AdminVeterinairesComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.http.get<Veterinaire[]>(`${environment.apiUrl}/veterinaires/all`, this.getAuthHeaders())
+    this.http.get<Veterinaire[]>(`${environment.apiUrl}/veterinaires/all`, this.getRequestOptions())
       .subscribe({
         next: (data) => {
           this.veterinaires = data;
@@ -155,12 +153,6 @@ export class AdminVeterinairesComponent implements OnInit {
       return;
     }
 
-    const token = localStorage.getItem('admin_token');
-    if (!token) {
-      this.error = 'Session expirée. Veuillez vous reconnecter.';
-      return;
-    }
-
     this.uploadLoading = true;
     this.error = '';
     this.successMessage = '';
@@ -169,9 +161,7 @@ export class AdminVeterinairesComponent implements OnInit {
     formData.append('file', this.selectedFile);
 
     const options = {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+      withCredentials: true,
       responseType: 'text' as 'json'  // Handle text response from API
     };
 
@@ -180,17 +170,17 @@ export class AdminVeterinairesComponent implements OnInit {
         next: (response) => {
           this.uploadLoading = false;
           console.log('Upload response:', response);
-          
+
           // Check if response indicates success
           if (response && (response.success === false || response.error)) {
             this.error = response.message || response.error || 'Erreur lors de l\'importation du fichier';
             return;
           }
-          
+
           this.successMessage = response?.message || 'Fichier importé avec succès!';
           this.selectedFile = null;
           this.showSuccessModal = true;
-          
+
           // Reset file input
           const fileInput = document.getElementById('fileInput') as HTMLInputElement;
           if (fileInput) fileInput.value = '';
@@ -201,13 +191,13 @@ export class AdminVeterinairesComponent implements OnInit {
         error: (error) => {
           this.uploadLoading = false;
           console.error('Error uploading file:', error);
-          
+
           // Handle specific error messages
           let errorMessage = 'Erreur lors de l\'importation du fichier';
-          
+
           if (error.status === 400) {
             const errorText = error.error?.message || error.error || '';
-            
+
             // Check for header column error
             if (errorText.includes('en-tête') || errorText.includes('colonnes')) {
               errorMessage = '❌ Format de fichier incorrect : Le fichier Excel doit contenir exactement les colonnes "nom", "prenom" et "matricule" dans l\'en-tête.';
@@ -223,7 +213,7 @@ export class AdminVeterinairesComponent implements OnInit {
               errorMessage = errorText || errorMessage;
             }
           }
-          
+
           this.error = errorMessage;
         }
       });

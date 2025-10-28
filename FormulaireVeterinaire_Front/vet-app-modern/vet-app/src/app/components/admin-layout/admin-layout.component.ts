@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-layout',
@@ -12,15 +14,19 @@ import { Router, RouterModule, RouterOutlet } from '@angular/router';
 export class AdminLayoutComponent {
   sidebarOpen = true;
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private http: HttpClient
+  ) {
     this.checkAuthentication();
   }
 
   checkAuthentication(): void {
-    const adminToken = localStorage.getItem('admin_token');
+    // With HttpOnly cookies, we can't check the token in JavaScript
+    // Only check if user is marked as admin
     const isAdmin = localStorage.getItem('isAdmin');
     
-    if (!adminToken || isAdmin !== 'true') {
+    if (isAdmin !== 'true') {
       // Redirect to login if not authenticated as admin
       this.router.navigate(['/login']);
     }
@@ -31,21 +37,31 @@ export class AdminLayoutComponent {
   }
 
   logout() {
-    // Clear all tokens and user data
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('userId');
-    
-    // Clear any remaining data
-    localStorage.clear();
-    
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) caches.delete(name);
-      });
-    }
-    this.router.navigate(['/']);
+    // Call backend to clear HttpOnly cookie
+    this.http.post(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
+      next: () => {
+        // Clear user data from localStorage
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('userId');
+        localStorage.clear();
+        
+        // Clear browser cache
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+          });
+        }
+        
+        // Redirect to home
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('Logout error:', error);
+        // Even if backend fails, clear local data and redirect
+        localStorage.clear();
+        this.router.navigate(['/']);
+      }
+    });
   }
 
   isActive(route: string): boolean {

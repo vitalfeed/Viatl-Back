@@ -49,8 +49,10 @@ export class AdminProductsComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    const token = localStorage.getItem('admin_token');
-    if (!token) {
+    // With HttpOnly cookies, token is not in localStorage
+    // Check if user is admin instead
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (isAdmin !== 'true') {
       this.router.navigate(['/login']);
       return;
     }
@@ -261,5 +263,14 @@ export class AdminProductsComponent implements OnInit {
   logout() {
     localStorage.clear();
     this.router.navigate(['/']);
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    // Prevent infinite loop by checking if we already tried to set a fallback
+    if (!img.src.includes('data:image')) {
+      // Use a simple SVG placeholder instead of trying to load another image
+      img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub24gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
+    }
   }
 }

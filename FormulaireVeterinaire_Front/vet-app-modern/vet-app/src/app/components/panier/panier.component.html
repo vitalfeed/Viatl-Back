@@ -40,8 +40,7 @@
         <div class="bg-white rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-semibold text-gray-800">Articles ({{ cartItems.length }})</h2>
-            <button (click)="clearCart()"
-              class="text-red-500 hover:text-red-600 text-sm font-medium transition-colors">
+            <button (click)="clearCart()" class="text-red-500 hover:text-red-600 text-sm font-medium transition-colors">
               Vider le panier
             </button>
           </div>
@@ -51,20 +50,19 @@
             <div *ngFor="let item of cartItems; trackBy: trackByCartItemId"
               class="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-vet-blue transition-colors">
               <!-- Product Image -->
-              <div class="w-28 h-28 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200">
-                <img 
-                  [src]="item.imageUrl" 
-                  [alt]="item.name"
-                  class="w-full h-full object-contain p-3"
-                  (error)="onImageError($event)"
-                  loading="eager">
+              <div
+                class="w-28 h-28 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200">
+                <img [src]="item.imageUrl" [alt]="'Image du produit ' + item.name + ' dans le panier'"
+                  class="w-full h-full object-contain p-3" (error)="onImageError($event)" loading="lazy">
               </div>
 
               <!-- Product Info -->
               <div class="flex-grow">
                 <h3 class="font-semibold text-gray-800 mb-1">{{ item.name }}</h3>
-                <p class="text-sm text-gray-500 mb-2">
-                  {{ getCategoryLabel(item.category) }} - {{ getSubCategoryLabel(item.subCategory) }}
+                <p class="text-sm text-gray-500 mb-2" *ngIf="item.category || item.subCategory">
+                  <span *ngIf="item.category">{{ getCategoryLabel(item.category) }}</span>
+                  <span *ngIf="item.category && item.subCategory"> - </span>
+                  <span *ngIf="item.subCategory">{{ getSubCategoryLabel(item.subCategory) }}</span>
                 </p>
                 <p class="text-lg font-bold text-vet-blue">{{ item.price | number:'1.2-2' }} TND</p>
               </div>
@@ -92,8 +90,7 @@
               </div>
 
               <!-- Remove Button -->
-              <button (click)="removeFromCart(item.id)"
-                class="text-red-500 hover:text-red-600 transition-colors p-2">
+              <button (click)="removeFromCart(item.id)" class="text-red-500 hover:text-red-600 transition-colors p-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -127,9 +124,18 @@
             </div>
           </div>
 
-          <button (click)="proceedToCheckout()"
-            class="w-full bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 mb-4">
-            Passer la commande
+          <button (click)="proceedToCheckout()" [disabled]="isCheckingOut"
+            class="w-full bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span *ngIf="!isCheckingOut">Passer la commande</span>
+            <span *ngIf="isCheckingOut" class="flex items-center justify-center">
+              <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+              </svg>
+              Traitement...
+            </span>
           </button>
 
           <button (click)="continueShopping()"
@@ -169,3 +175,68 @@
     </div>
   </div>
 </section>
+
+
+<!-- Success Modal -->
+<div *ngIf="showSuccessModal"
+  class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all">
+    <!-- Success Icon -->
+    <div class="text-center pt-8 pb-6">
+      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Commande confirmée !</h2>
+      <p class="text-gray-600 px-6">Votre commande a été passée avec succès</p>
+    </div>
+
+    <!-- Success Details -->
+    <div class="px-8 pb-6">
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+            </path>
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-green-800 mb-1">Email de confirmation envoyé</p>
+            <p class="text-xs text-green-700">Un email contenant les détails de votre commande vous a été envoyé.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        <div class="flex items-center gap-3 text-sm text-gray-600">
+          <svg class="w-5 h-5 text-vet-blue flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Commande enregistrée dans le système</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-gray-600">
+          <svg class="w-5 h-5 text-vet-blue flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Notification envoyée à l'équipe</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-gray-600">
+          <svg class="w-5 h-5 text-vet-blue flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Panier vidé automatiquement</span>
+        </div>
+      </div>
+
+      <button (click)="closeSuccessModal()"
+        class="w-full bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+        Retour à l'espace vétérinaire
+      </button>
+    </div>
+  </div>
+</div>

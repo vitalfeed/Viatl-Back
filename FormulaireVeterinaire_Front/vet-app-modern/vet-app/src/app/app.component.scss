@@ -87,10 +87,15 @@ header {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-right: 1px solid #e2e8f0;
     flex-shrink: 0;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-    position: relative;
+    position: sticky;
+    top: 4rem;
+    max-height: calc(100vh - 4rem);
+    align-self: flex-start;
+    z-index: 10;
     
     &::before {
       content: '';

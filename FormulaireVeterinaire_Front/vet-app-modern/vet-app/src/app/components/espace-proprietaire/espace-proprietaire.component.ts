@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -33,7 +33,7 @@ export class EspaceProprietaireComponent implements OnInit {
   selectedSousCategory: string | null = null;
   menuOpen = false;
   currentPage = 1;
-  itemsPerPage = 9;
+  itemsPerPage = 20;
   Math = Math; // Make Math available in template
   highlightedProductId: number | null = null;
 
@@ -74,6 +74,58 @@ export class EspaceProprietaireComponent implements OnInit {
       // Reset to first page when filters change
       this.currentPage = 1;
     });
+
+    // Setup navbar scroll behavior to stop at footer
+    this.setupNavbarScrollBehavior();
+  }
+
+  /**
+   * Setup navbar to stop scrolling when footer appears
+   */
+  private setupNavbarScrollBehavior(): void {
+    // Wait for DOM to be ready
+    setTimeout(() => {
+      this.handleNavbarScroll();
+    }, 100);
+  }
+
+  /**
+   * Handle scroll event to stop navbar at footer
+   */
+  @HostListener('window:scroll', ['$event'])
+  onWindowScroll(): void {
+    this.handleNavbarScroll();
+  }
+
+  /**
+   * Calculate and apply navbar position based on footer visibility
+   */
+  private handleNavbarScroll(): void {
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    
+    if (!header || !footer) return;
+
+    const footerRect = footer.getBoundingClientRect();
+    const headerHeight = header.offsetHeight;
+    const windowHeight = window.innerHeight;
+
+    // Check if footer is entering the viewport
+    if (footerRect.top <= windowHeight) {
+      // Footer is visible, calculate how much to push navbar up
+      const overlap = windowHeight - footerRect.top;
+      const maxPush = footerRect.height;
+      const pushAmount = Math.min(overlap, maxPush);
+      
+      // Apply transform to push navbar up
+      if (pushAmount > 0) {
+        header.style.transform = `translateY(-${pushAmount}px)`;
+        header.style.transition = 'transform 0.1s ease-out';
+      }
+    } else {
+      // Footer not visible, reset navbar position
+      header.style.transform = 'translateY(0)';
+    }
   }
 
   /**
@@ -87,7 +139,6 @@ export class EspaceProprietaireComponent implements OnInit {
       next: (products) => {
         this.products = products;
         this.isLoading = false;
-        console.log('Products loaded:', products.length);
       },
       error: (error) => {
         console.error('Error loading products:', error);
@@ -140,11 +191,12 @@ export class EspaceProprietaireComponent implements OnInit {
     }
 
     return this.products.filter(product => {
-      // Normalize strings for comparison (lowercase, remove accents)
+      // Normalize strings for comparison (lowercase, remove accents, replace spaces/underscores)
       const normalizeString = (str: string) => {
         return str.toLowerCase()
           .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[\s_-]/g, ''); // Remove spaces, underscores, and hyphens
       };
 
       const productCategory = normalizeString(product.category);
@@ -209,13 +261,11 @@ export class EspaceProprietaireComponent implements OnInit {
 
   addToCart(product: Product) {
     this.cartService.addToCart(product);
-    console.log('Produit ajouté au panier:', product.name);
     // Optional: Show a toast notification here
   }
 
   viewProductDetails(product: Product) {
     // Logique pour voir les détails du produit
-    console.log('Voir détails du produit:', product);
   }
 
   trackByProductId(index: number, product: Product): number {
@@ -243,7 +293,10 @@ export class EspaceProprietaireComponent implements OnInit {
    */
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = '/assets/images/default-product.jpg';
-    img.onerror = null; // Prevent infinite loop
+    // Prevent infinite loop by checking if we already tried to set a fallback
+    if (!img.src.includes('data:image')) {
+      // Use a simple SVG placeholder instead of trying to load another image
+      img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub24gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
+    }
   }
 }

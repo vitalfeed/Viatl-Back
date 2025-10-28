@@ -276,14 +276,19 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Check if user is logged in
-    this.checkAuthentication();
+    // Auth guard already verified authentication, no need to check again
 
-    // Load user data to get status
+    // Load user name from localStorage as immediate fallback
+    const storedName = localStorage.getItem('userFullName');
+    if (storedName) {
+      this.userFullName = storedName;
+    }
+
+    // Load user data to get status and update name
     this.loadUserData();
 
-    // Don't load products immediately - they will be loaded when needed
-    // this.loadProducts();
+    // Load products automatically on page load
+    this.loadProducts();
 
     // Subscribe to cart updates
     this.cartService.cartItems$.subscribe(items => {
@@ -293,39 +298,48 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Check if user is authenticated
-   */
-  checkAuthentication(): void {
-    const userToken = localStorage.getItem('user_token');
-    if (!userToken) {
-      // Redirect to login if not authenticated
-      this.router.navigate(['/login']);
-    }
-  }
+
 
   /**
    * Load user data to get status
    */
   loadUserData(): void {
-    const userId = localStorage.getItem('userId');
+    const apiUrl = `${environment.apiUrl}/veterinaires/me`;
 
-    if (!userId) {
-      return;
-    }
-
-    this.http.get<any>(`${environment.apiUrl}/veterinaires/${userId}`).subscribe({
+    this.http.get<any>(apiUrl, { withCredentials: true }).subscribe({
       next: (data) => {
-        console.log('User data received:', data);
+        // Store userId if not already in localStorage
+        if (data.id || data.userId) {
+          const id = data.id || data.userId;
+          localStorage.setItem('userId', id.toString());
+        }
+
         this.userStatus = data.status || '';
         this.userName = data.nom || '';
-        this.userFullName = `${data.prenom || ''} ${data.nom || ''}`.trim();
-        console.log('User status set to:', this.userStatus);
-        console.log('User full name:', this.userFullName);
-        console.log('Should show CTA?', this.userStatus !== 'ACTIVE');
+        const fullName = `${data.prenom || ''} ${data.nom || ''}`.trim();
+        if (fullName) {
+          this.userFullName = fullName;
+          // Update localStorage with fresh data
+          localStorage.setItem('userFullName', fullName);
+        }
+
+        // Store status in localStorage
+        if (this.userStatus) {
+          localStorage.setItem('userStatus', this.userStatus);
+        }
       },
       error: (error) => {
         console.error('Error loading user data:', error);
+
+        // If 401, session expired - redirect to login
+        if (error.status === 401) {
+          console.warn('Session expired or invalid. Redirecting to login.');
+          localStorage.clear();
+          this.router.navigate(['/login']);
+        } else {
+          // For other errors, assume INACTIVE status to show pricing/CTA
+          this.userStatus = 'INACTIVE';
+        }
       }
     });
   }
@@ -383,18 +397,15 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
     this.passwordError = '';
     this.passwordSuccess = '';
 
-    const userToken = localStorage.getItem('user_token');
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken}`
-    });
-
     const body = {
       currentPassword: this.passwordForm.value.currentPassword,
       newPassword: this.passwordForm.value.newPassword
     };
 
-    this.http.post(`${environment.apiUrl}/reset-password`, body, { headers, responseType: 'text' }).subscribe({
+    this.http.post(`${environment.apiUrl}/reset-password`, body, {
+      withCredentials: true,
+      responseType: 'text'
+    }).subscribe({
       next: (response) => {
         this.passwordLoading = false;
         this.passwordSuccess = 'Mot de passe modifié avec succès !';
@@ -442,14 +453,32 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
    * Logout user
    */
   logout(): void {
-    // Clear all tokens and user data
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('userId');
+    // Call backend to clear HttpOnly cookie
+    this.http.post(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
+      next: () => {
+        // Clear user data from localStorage
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userFullName');
+        localStorage.clear();
 
-    // Redirect to home page
-    this.router.navigate(['/']);
+        // Clear browser cache
+        if ('caches' in window) {
+          caches.keys().then(function (names) {
+            for (let name of names) caches.delete(name);
+          });
+        }
+
+        // Redirect to login
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('Logout error:', error);
+        // Even if backend fails, clear local data and redirect
+        localStorage.clear();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   /**
@@ -479,7 +508,6 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
         this.isLoading = false;
         this.productsLoaded = true;
         this.startAutoSlide();
-        console.log('Products loaded:', products.length);
       },
       error: (error) => {
         console.error('Error loading products:', error);
@@ -738,11 +766,13 @@ export class EspaceVeterinaireComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle image load error
+   * Handle image load error - use a simple placeholder
    */
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = '/assets/images/default-product.jpg';
-    img.onerror = null; // Prevent infinite loop
+    // Remove error handler FIRST to prevent infinite loop
+    img.onerror = null;
+    // Use a simple SVG placeholder instead of trying to load a missing image
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect fill="%23f3f4f6" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%239ca3af"%3EProduit%3C/text%3E%3C/svg%3E';
   }
 }
