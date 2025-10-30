@@ -174,6 +174,36 @@
       }
 
       .card-content {
+        .welcome-message {
+          margin-bottom: 1.5rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+          .welcome-text {
+            opacity: 0.9;
+            line-height: 1.6;
+            font-size: 1rem;
+          }
+        }
+
+        .quick-benefits {
+          .benefit-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+
+            .benefit-icon {
+              font-size: 1rem;
+            }
+
+            .benefit-text {
+              opacity: 0.9;
+              font-size: 0.9rem;
+            }
+          }
+        }
+
         .metric {
           display: flex;
           justify-content: space-between;
@@ -592,7 +622,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: 1.18rem 2rem;
   border-bottom: 1px solid #d1d5db;
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
 
@@ -821,4 +851,79 @@
 
 .hover\:text-blue-700:hover {
   color: #1d4ed8;
+}
+
+
+// Enhanced Pricing Title Styles
+.pricing-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  .pricing-icon {
+    font-size: 2rem;
+    animation: bounce 2s infinite;
+  }
+
+  .enhanced-title {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+}
+
+.enhanced-description {
+  font-size: 1.25rem !important;
+  margin-bottom: 2rem;
+
+  .highlight-text {
+    color: #667eea;
+    font-weight: 700;
+  }
+}
+
+.pricing-features-highlight {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+
+  .feature-badge {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.2);
+    }
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }

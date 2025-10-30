@@ -32,12 +32,10 @@
       </h3>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading" class="text-center py-16">
-      <div class="flex justify-center mb-6">
-        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-vet-blue"></div>
-      </div>
-      <h3 class="text-2xl font-semibold text-gray-700 mb-2">Chargement des produits...</h3>
+    <!-- Initial Loading State with Skeleton -->
+    <div *ngIf="isLoading"
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
+      <app-product-skeleton [count]="12"></app-product-skeleton>
     </div>
 
     <!-- Error State -->
@@ -58,7 +56,7 @@
     </div>
 
     <!-- Empty State -->
-    <div *ngIf="!isLoading && !errorMessage && getFilteredProducts().length === 0" class="text-center py-16">
+    <div *ngIf="!isLoading && !errorMessage && getTotalProductsCount() === 0" class="text-center py-16">
       <div class="flex justify-center mb-6">
         <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -69,94 +67,97 @@
       <p class="text-gray-500">Essayez de modifier vos filtres</p>
     </div>
 
-    <!-- Products Grid -->
-    <div *ngIf="!isLoading && !errorMessage" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-      <div *ngFor="let product of getPaginatedProducts(); trackBy: trackByProductId"
-        class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 product-card overflow-hidden"
-        [class.highlighted-product]="highlightedProductId === product.id">
-        <div class="relative">
-          <div
-            class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
-            <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name + ' - ' + product.description" class="w-full h-full object-contain p-3"
-              (error)="onImageError($event)" loading="lazy">
+    <!-- Products Grid with Infinite Scroll -->
+    <div *ngIf="!isLoading && !errorMessage" appInfiniteScroll (scrolled)="onScroll()"
+      [scrollEnabled]="hasMoreProducts && !isLoadingMore">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
+        <div *ngFor="let product of displayedProducts; trackBy: trackByProductId"
+          class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 product-card overflow-hidden"
+          [class.highlighted-product]="highlightedProductId === product.id">
+          <div class="relative">
+            <div
+              class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center overflow-hidden">
+              <img appLazyLoadImage [src]="product.imageUrl"
+                [alt]="'Image du produit ' + product.name + ' - ' + product.description"
+                class="w-full h-full object-contain p-3">
+            </div>
+            <div class="absolute top-2 right-2">
+              <span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">{{
+                getSubCategoryLabel(product.subCategory)
+                }}</span>
+            </div>
+            <div class="absolute top-2 left-2" *ngIf="!product.inStock">
+              <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">Rupture</span>
+            </div>
           </div>
-          <div class="absolute top-2 right-2">
-            <span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">{{
-              getSubCategoryLabel(product.subCategory)
-              }}</span>
-          </div>
-          <div class="absolute top-2 left-2" *ngIf="!product.inStock">
-            <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">Rupture</span>
-          </div>
-        </div>
-        <div class="p-4">
-          <h3 class="text-base font-bold mb-2 text-gray-800 min-h-[2.5rem] line-clamp-2">{{ product.name }}</h3>
-          <p class="text-gray-600 mb-3 text-xs line-clamp-2 min-h-[2rem]">{{ product.description }}</p>
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category }}</span>
-            <div class="text-lg font-bold text-vet-blue">{{ product.price | number:'1.2-2' }} TND</div>
-          </div>
-          <div class="flex flex-col gap-2">
-            <a [href]="product.detailsUrl" target="_blank" rel="noopener noreferrer"
-              class="w-full flex items-center justify-center text-vet-blue hover:text-blue-700 hover:bg-blue-50 font-medium text-sm transition-all duration-200 py-2 px-3 rounded-lg border border-vet-blue">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                </path>
-              </svg>
-              Détails
-            </a>
-            <button
-              class="w-full bg-vet-blue hover:bg-blue-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              (click)="addToCart(product)" [disabled]="!product.inStock">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
-                </path>
-              </svg>
-              {{ product.inStock ? 'Ajouter' : 'Indisponible' }}
-            </button>
+          <div class="p-4">
+            <h3 class="text-base font-bold mb-2 text-gray-800 min-h-[2.5rem] line-clamp-2">{{ product.name }}</h3>
+            <p class="text-gray-600 mb-3 text-xs line-clamp-2 min-h-[2rem]">{{ product.description }}</p>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-700 font-medium">{{ product.category
+                }}</span>
+              <div class="text-lg font-bold text-vet-blue">{{ product.price | number:'1.2-2' }} TND</div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <a [href]="product.detailsUrl" target="_blank" rel="noopener noreferrer"
+                class="w-full flex items-center justify-center text-vet-blue hover:text-blue-700 hover:bg-blue-50 font-medium text-sm transition-all duration-200 py-2 px-3 rounded-lg border border-vet-blue">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                  </path>
+                </svg>
+                Détails
+              </a>
+              <button
+                class="w-full bg-vet-blue hover:bg-blue-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                (click)="addToCart(product)" [disabled]="!product.inStock">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                  </path>
+                </svg>
+                {{ product.inStock ? 'Ajouter' : 'Indisponible' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Pagination Controls -->
-    <div *ngIf="getTotalPages() > 1" class="flex justify-center items-center gap-2 mt-8">
-      <!-- Previous Button -->
-      <button (click)="previousPage()" [disabled]="currentPage === 1"
-        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-      </button>
+      <!-- Loading More Skeleton -->
+      <div *ngIf="isLoadingMore"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
+        <app-product-skeleton [count]="6"></app-product-skeleton>
+      </div>
 
-      <!-- Page Numbers -->
-      <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)" [class.bg-vet-blue]="currentPage === page"
-        [class.text-white]="currentPage === page" [class.border-vet-blue]="currentPage === page"
-        [class.text-gray-700]="currentPage !== page" [class.border-gray-300]="currentPage !== page"
-        class="px-4 py-2 rounded-lg border hover:bg-blue-50 transition-all duration-200 font-medium">
-        {{ page }}
-      </button>
+      <!-- Load More Button (fallback for browsers without good scroll support) -->
+      <div *ngIf="hasMoreProducts && !isLoadingMore" class="text-center mt-8">
+        <button (click)="loadMoreProducts()"
+          class="bg-vet-blue hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+          Charger plus de produits
+        </button>
+      </div>
 
-      <!-- Next Button -->
-      <button (click)="nextPage()" [disabled]="currentPage === getTotalPages()"
-        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </button>
-    </div>
+      <!-- End of Results Message -->
+      <div *ngIf="!hasMoreProducts && displayedProducts.length > 0" class="text-center mt-8 py-6">
+        <div class="inline-flex items-center px-6 py-3 bg-gray-100 rounded-full text-gray-600">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Tous les produits ont été chargés
+        </div>
+      </div>
 
-    <!-- Results Info -->
-    <div class="text-center mt-4 text-gray-600 text-sm">
-      Affichage de {{ (currentPage - 1) * itemsPerPage + 1 }} à {{ Math.min(currentPage * itemsPerPage,
-      getFilteredProducts().length) }} sur {{ getFilteredProducts().length }} produits
+      <!-- Results Info -->
+      <div class="text-center mt-4 text-gray-600 text-sm">
+        Affichage de {{ getDisplayedProductsCount() }} sur {{ getTotalProductsCount() }} produits
+      </div>
     </div>
   </div>
 </section>
+
 
 
 <!-- Footer -->
@@ -258,24 +259,32 @@
       <div>
         <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-2">Mot de passe actuel</label>
         <div class="relative">
-          <input [type]="showCurrentPassword ? 'text' : 'password'" id="currentPassword" formControlName="currentPassword"
+          <input [type]="showCurrentPassword ? 'text' : 'password'" id="currentPassword"
+            formControlName="currentPassword"
             class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-vet-blue focus:border-transparent"
             [ngClass]="{'border-red-500': passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched}"
             placeholder="Entrez votre mot de passe actuel">
           <button type="button" (click)="toggleCurrentPasswordVisibility()"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none" tabindex="-1">
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            tabindex="-1">
             <svg *ngIf="!showCurrentPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+              </path>
             </svg>
             <svg *ngIf="showCurrentPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21">
+              </path>
             </svg>
           </button>
         </div>
         <div *ngIf="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"
           class="text-red-500 text-sm mt-1">
-          <span *ngIf="passwordForm.get('currentPassword')?.errors?.['required']">Le mot de passe actuel est requis</span>
+          <span *ngIf="passwordForm.get('currentPassword')?.errors?.['required']">Le mot de passe actuel est
+            requis</span>
         </div>
       </div>
 
@@ -288,17 +297,23 @@
             [ngClass]="{'border-red-500': passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched}"
             placeholder="Entrez le nouveau mot de passe">
           <button type="button" (click)="toggleNewPasswordVisibility()"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none" tabindex="-1">
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            tabindex="-1">
             <svg *ngIf="!showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+              </path>
             </svg>
             <svg *ngIf="showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21">
+              </path>
             </svg>
           </button>
         </div>
-        
+
         <!-- Password Strength Indicator -->
         <div *ngIf="passwordForm.get('newPassword')?.value" class="mt-2">
           <div class="flex items-center justify-between mb-1">
@@ -306,8 +321,7 @@
             <span class="text-xs font-semibold" [style.color]="passwordStrengthColor">{{ passwordStrengthText }}</span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div class="h-full transition-all duration-300 rounded-full" 
-              [style.width.%]="passwordStrength"
+            <div class="h-full transition-all duration-300 rounded-full" [style.width.%]="passwordStrength"
               [style.background-color]="passwordStrengthColor"></div>
           </div>
         </div>
@@ -316,26 +330,35 @@
           <div *ngIf="passwordForm.get('newPassword')?.errors?.['required']">• Le mot de passe est requis</div>
           <div *ngIf="passwordForm.get('newPassword')?.errors?.['minLength']">• Minimum 8 caractères</div>
           <div *ngIf="passwordForm.get('newPassword')?.errors?.['noUpperCase']">• Au moins une lettre majuscule</div>
-          <div *ngIf="passwordForm.get('newPassword')?.errors?.['noSpecialChar']">• Au moins un caractère spécial (!&#64;#$%^&*...)</div>
+          <div *ngIf="passwordForm.get('newPassword')?.errors?.['noSpecialChar']">• Au moins un caractère spécial
+            (!&#64;#$%^&*...)</div>
         </div>
       </div>
 
       <!-- Confirm Password -->
       <div>
-        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
+        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de
+          passe</label>
         <div class="relative">
-          <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" formControlName="confirmPassword"
+          <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword"
+            formControlName="confirmPassword"
             class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-vet-blue focus:border-transparent"
             [ngClass]="{'border-red-500': passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched}"
             placeholder="Confirmez le nouveau mot de passe">
           <button type="button" (click)="toggleConfirmPasswordVisibility()"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none" tabindex="-1">
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            tabindex="-1">
             <svg *ngIf="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+              </path>
             </svg>
             <svg *ngIf="showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21">
+              </path>
             </svg>
           </button>
         </div>

@@ -5,11 +5,12 @@ import { HttpClientModule } from '@angular/common/http';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
+import { LazyLoadImageDirective } from '../../directives/lazy-load-image.directive';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, HttpClientModule],
+  imports: [CommonModule, RouterModule, HttpClientModule, LazyLoadImageDirective],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })

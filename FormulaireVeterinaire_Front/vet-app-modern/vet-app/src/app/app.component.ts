@@ -7,12 +7,13 @@ import { filter } from 'rxjs/operators';
 import { CartService } from './services/cart.service';
 import { AuthMonitorService } from './services/auth-monitor.service';
 import { AuthService } from './services/auth.service';
+import { ToastComponent } from './components/toast/toast.component';
 import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, HttpClientModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, HttpClientModule, ReactiveFormsModule, ToastComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -25,6 +26,7 @@ export class AppComponent implements OnInit {
   sidebarOpen: boolean = false;
   produitsSidebarOpen: boolean = false;
   showProfileDropdown: boolean = false;
+  mobileMenuOpen: boolean = false;
   userFullName: string = '';
   
   // Password modal
@@ -69,6 +71,9 @@ export class AppComponent implements OnInit {
       // Reset filters when route changes
       this.selectedProductFilter = 'tous';
       this.selectedSubType = '';
+      
+      // Close mobile menu on navigation
+      this.mobileMenuOpen = false;
       
       // Refresh user full name from localStorage on route change
       const storedName = localStorage.getItem('userFullName');
@@ -117,6 +122,14 @@ export class AppComponent implements OnInit {
     return this.currentRoute.includes('/panier');
   }
 
+  get isFormulaireVet(): boolean {
+    return this.currentRoute.includes('/formulaireVet');
+  }
+
+  get isFormulaireUser(): boolean {
+    return this.currentRoute.includes('/formulaireUser');
+  }
+
   get navbarTitle(): string {
     return 'VITALFEED';
   }
@@ -131,6 +144,14 @@ export class AppComponent implements OnInit {
 
   toggleProduitsSidebar() {
     this.produitsSidebarOpen = !this.produitsSidebarOpen;
+  }
+
+  toggleMobileMenu() {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.mobileMenuOpen = false;
   }
 
   getAvailableSubTypes() {

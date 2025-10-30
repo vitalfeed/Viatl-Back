@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
+import { ToastService } from './toast.service';
 import { environment } from '../../environments/environment';
 
 export interface CartItem {
@@ -35,7 +36,10 @@ export class CartService {
   private cartCount = new BehaviorSubject<number>(0);
   public cartCount$ = this.cartCount.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private toastService: ToastService
+  ) {
     // Load cart from backend on service initialization
     this.loadCartFromBackend();
   }
@@ -73,7 +77,7 @@ export class CartService {
     ).subscribe(response => {
       console.log('Load cart response:', response);
       console.log('Cart items from backend:', response.items);
-      
+
       // Normalize items - map backend fields to frontend fields
       const normalizedItems = (response.items || []).map(item => ({
         id: item.itemId || item.id || 0,
@@ -87,7 +91,7 @@ export class CartService {
         category: item.category || '',
         subCategory: item.subCategory || ''
       }));
-      
+
       console.log('Normalized cart items:', normalizedItems);
       this.updateLocalCart(normalizedItems);
     });
@@ -110,23 +114,50 @@ export class CartService {
 
     console.log('Adding to cart:', product.name, 'userId:', userId);
 
-    this.http.post<CartResponse>(
+    this.http.post<any>(
       `${environment.apiUrl}/cart/items?userId=${userId}`,
       requestBody,
-      { withCredentials: true }
+      {
+        withCredentials: true,
+        observe: 'response'
+      }
     ).pipe(
       catchError(error => {
         console.error('Error adding to cart:', error);
-        // Fallback to localStorage
-        this.addToCartLocally(product);
+        console.error('Error status:', error.status);
+
+        // If it's a 200 but parsing failed, it's actually success
+        if (error.status === 200 || error.status === 204) {
+          console.log('Add successful despite parsing error');
+          this.loadCartFromBackend();
+          this.toastService.success('Produit ajouté au panier');
+        } else {
+          this.toastService.error('Erreur lors de l\'ajout au panier');
+          // Fallback to localStorage
+          this.addToCartLocally(product);
+        }
         return of(null);
       })
-    ).subscribe(response => {
+    ).subscribe(httpResponse => {
+      if (!httpResponse) {
+        console.log('Handled in catchError');
+        return;
+      }
+
+      const response = httpResponse.body;
       console.log('Add to cart response:', response);
-      console.log('Response type:', typeof response);
+      console.log('Response status:', httpResponse.status);
       console.log('Response items:', response?.items);
-      
-      if (response && response.items) {
+
+      // Handle 204 No Content
+      if (httpResponse.status === 204) {
+        console.log('204 No Content - reloading cart');
+        this.loadCartFromBackend();
+        this.toastService.success('Produit ajouté au panier');
+        return;
+      }
+
+      if (response && response.items && Array.isArray(response.items)) {
         // Normalize items - map backend fields to frontend fields
         const normalizedItems = response.items.map((item: any) => ({
           id: item.itemId || item.id || 0,
@@ -140,13 +171,15 @@ export class CartService {
           category: item.category || '',
           subCategory: item.subCategory || ''
         }));
-        
+
         console.log('Normalized items after add:', normalizedItems);
         this.updateLocalCart(normalizedItems);
+        this.toastService.success('Produit ajouté au panier');
       } else {
-        console.error('Invalid response structure:', response);
-        // Reload cart from backend as fallback
+        // Response doesn't have items, reload from backend
+        console.warn('Response missing items array, reloading cart');
         this.loadCartFromBackend();
+        this.toastService.success('Produit ajouté au panier');
       }
     });
   }
@@ -168,22 +201,50 @@ export class CartService {
 
     console.log('Updating quantity - itemId:', itemId, 'quantity:', quantity);
 
-    this.http.put<CartResponse>(
+    this.http.put<any>(
       `${environment.apiUrl}/cart/items/${itemId}?userId=${userId}&quantity=${quantity}`,
       {},
-      { withCredentials: true }
+      {
+        withCredentials: true,
+        observe: 'response'
+      }
     ).pipe(
       catchError(error => {
         console.error('Error updating quantity:', error);
-        // Fallback to localStorage
-        this.updateQuantityLocally(itemId, quantity);
+        console.error('Error status:', error.status);
+
+        // If it's a 200/204 but parsing failed, it's actually success
+        if (error.status === 200 || error.status === 204) {
+          console.log('Update successful despite parsing error');
+          this.loadCartFromBackend();
+          this.toastService.success('Quantité mise à jour');
+        } else {
+          this.toastService.error('Erreur lors de la mise à jour');
+          // Fallback to localStorage
+          this.updateQuantityLocally(itemId, quantity);
+        }
         return of(null);
       })
-    ).subscribe(response => {
+    ).subscribe(httpResponse => {
+      if (!httpResponse) {
+        console.log('Handled in catchError');
+        return;
+      }
+
+      const response = httpResponse.body;
       console.log('Update quantity response:', response);
+      console.log('Response status:', httpResponse.status);
       console.log('Response items:', response?.items);
-      
-      if (response && response.items) {
+
+      // Handle 204 No Content
+      if (httpResponse.status === 204) {
+        console.log('204 No Content - reloading cart');
+        this.loadCartFromBackend();
+        this.toastService.success('Quantité mise à jour');
+        return;
+      }
+
+      if (response && response.items && Array.isArray(response.items)) {
         // Normalize items - map backend fields to frontend fields
         const normalizedItems = response.items.map((item: any) => ({
           id: item.itemId || item.id || 0,
@@ -197,13 +258,15 @@ export class CartService {
           category: item.category || '',
           subCategory: item.subCategory || ''
         }));
-        
+
         console.log('Normalized items after update:', normalizedItems);
         this.updateLocalCart(normalizedItems);
+        this.toastService.success('Quantité mise à jour');
       } else {
-        console.error('Invalid response structure on update:', response);
-        // Reload cart from backend as fallback
+        // No items in response - reload cart
+        console.warn('Response missing items array, reloading cart');
         this.loadCartFromBackend();
+        this.toastService.success('Quantité mise à jour');
       }
     });
   }
@@ -221,21 +284,49 @@ export class CartService {
     console.log('Removing item from cart - itemId:', itemId, 'userId:', userId);
     console.log('DELETE URL:', `${environment.apiUrl}/cart/items/${itemId}?userId=${userId}`);
 
-    this.http.delete<CartResponse>(
+    this.http.delete<any>(
       `${environment.apiUrl}/cart/items/${itemId}?userId=${userId}`,
-      { withCredentials: true }
+      {
+        withCredentials: true,
+        observe: 'response'
+      }
     ).pipe(
       catchError(error => {
         console.error('Error removing from cart:', error);
-        // Fallback to localStorage
-        this.removeFromCartLocally(itemId);
+        console.error('Error status:', error.status);
+
+        // If it's a 200/204 but parsing failed, it's actually success
+        if (error.status === 200 || error.status === 204) {
+          console.log('Delete successful despite parsing error');
+          this.loadCartFromBackend();
+          this.toastService.success('Produit retiré du panier');
+        } else {
+          this.toastService.error('Erreur lors de la suppression');
+          // Fallback to localStorage
+          this.removeFromCartLocally(itemId);
+        }
         return of(null);
       })
-    ).subscribe(response => {
+    ).subscribe(httpResponse => {
+      if (!httpResponse) {
+        console.log('Handled in catchError');
+        return;
+      }
+
+      const response = httpResponse.body;
       console.log('Remove from cart response:', response);
+      console.log('Response status:', httpResponse.status);
       console.log('Response items:', response?.items);
-      
-      if (response && response.items) {
+
+      // Handle 204 No Content
+      if (httpResponse.status === 204) {
+        console.log('204 No Content - reloading cart');
+        this.loadCartFromBackend();
+        this.toastService.success('Produit retiré du panier');
+        return;
+      }
+
+      if (response && response.items && Array.isArray(response.items)) {
         // Normalize items - map backend fields to frontend fields
         const normalizedItems = response.items.map((item: any) => ({
           id: item.itemId || item.id || 0,
@@ -249,13 +340,15 @@ export class CartService {
           category: item.category || '',
           subCategory: item.subCategory || ''
         }));
-        
+
         console.log('Normalized items after removal:', normalizedItems);
         this.updateLocalCart(normalizedItems);
+        this.toastService.success('Produit retiré du panier');
       } else {
-        console.error('Invalid response structure on remove:', response);
-        // Reload cart from backend as fallback
+        // No items in response or empty response - reload cart
+        console.warn('Response missing items array, reloading cart');
         this.loadCartFromBackend();
+        this.toastService.success('Produit retiré du panier');
       }
     });
   }
@@ -301,7 +394,7 @@ export class CartService {
     return this.http.post(
       `${environment.apiUrl}/cart/orders/checkout?userId=${userId}`,
       requestBody,
-      { 
+      {
         withCredentials: true,
         responseType: 'text' as 'json' // Backend returns text, not JSON
       }
@@ -338,7 +431,7 @@ export class CartService {
     console.log('Updating local cart with items:', items);
     const count = items.reduce((count, item) => count + item.quantity, 0);
     console.log('New cart count:', count);
-    
+
     // Force new array reference to trigger change detection
     this.cartItems.next([...items]);
     this.cartCount.next(count);

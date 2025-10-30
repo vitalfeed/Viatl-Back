@@ -24,7 +24,7 @@
             class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{
             cartCount }}</span>
         </button>
-        
+
         <!-- Profile Dropdown -->
         <div class="profile-dropdown-container relative">
           <button (click)="toggleProfileDropdown()"
@@ -139,21 +139,27 @@
       <div class="hero-visual">
         <div class="hero-card">
           <div class="card-header">
-            <div class="card-title">Tableau de Bord Vétérinaire</div>
-            <div class="card-status">🟢 En ligne</div>
+            <div class="card-title">👋 Bienvenue {{ userFullName ? 'Dr. ' + userFullName : 'Docteur' }} !</div>
+            <div class="card-status">✨ Membre actif</div>
           </div>
           <div class="card-content">
-            <div class="metric">
-              <span class="metric-label">Consultations aujourd'hui</span>
-              <span class="metric-value">12</span>
+            <div class="welcome-message">
+              <p class="welcome-text">Nous sommes ravis de vous accompagner dans votre pratique vétérinaire quotidienne.
+              </p>
             </div>
-            <div class="metric">
-              <span class="metric-label">Rendez-vous à venir</span>
-              <span class="metric-value">8</span>
-            </div>
-            <div class="metric">
-              <span class="metric-label">Rappels en attente</span>
-              <span class="metric-value">3</span>
+            <div class="quick-benefits">
+              <div class="benefit-item">
+                <span class="benefit-icon">✅</span>
+                <span class="benefit-text">Accès illimité aux produits</span>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon">✅</span>
+                <span class="benefit-text">Support client prioritaire</span>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon">✅</span>
+                <span class="benefit-text">Livraison gratuite</span>
+              </div>
             </div>
           </div>
         </div>
@@ -247,11 +253,7 @@
   <div class="container max-w-7xl mx-auto px-4">
     <div class="flex items-center justify-center">
       <div class="flex-grow border-t-2 border-purple-200 max-w-md"></div>
-      <div class="mx-6 flex items-center space-x-2">
-        <span class="text-3xl">💎</span>
-        <span class="text-gray-600 font-semibold">Nos Offres</span>
-        <span class="text-3xl">💎</span>
-      </div>
+
       <div class="flex-grow border-t-2 border-purple-200 max-w-md"></div>
     </div>
   </div>
@@ -261,10 +263,15 @@
 <section id="pricing" class="pricing-section">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">Choisissez votre plan</h2>
-      <p class="section-description">
-        Des tarifs transparents adaptés à la taille de votre pratique
+      <div class="pricing-title-wrapper">
+        <span class="pricing-icon">💰</span>
+        <h2 class="section-title enhanced-title">Choisissez votre plan</h2>
+        <span class="pricing-icon">✨</span>
+      </div>
+      <p class="section-description enhanced-description">
+        <span class="highlight-text">Des tarifs transparents</span> adaptés à la taille de votre pratique
       </p>
+      
     </div>
 
     <div class="pricing-grid">
@@ -317,13 +324,7 @@
 <!-- Product Carousel Section -->
 <section id="products" class="py-12 bg-white">
   <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-10">
-      <h2 class="text-2xl md:text-3xl font-bold mb-2">Nos Produits Vétérinaires</h2>
-      <p class="text-gray-600 max-w-2xl mx-auto">
-        Découvrez notre gamme complète de produits nutritionnels et thérapeutiques spécialement sélectionnés pour vos
-        patients.
-      </p>
-    </div>
+
 
     <!-- Automatic Product Carousel -->
     <div class="relative">
@@ -337,8 +338,8 @@
               <div class="relative">
                 <div
                   class="w-full h-40 bg-gradient-to-br from-blue-50 to-green-50 rounded-t-xl flex items-center justify-center overflow-hidden">
-                  <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name + ' - ' + product.description" class="w-full h-full object-contain p-3"
-                    (error)="onImageError($event)" loading="lazy">
+                  <img [src]="product.imageUrl" [alt]="'Image du produit ' + product.name + ' - ' + product.description"
+                    class="w-full h-full object-contain p-3" (error)="onImageError($event)" loading="lazy">
                 </div>
                 <div class="absolute top-3 right-3">
                   <span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">{{
@@ -480,7 +481,7 @@
 <div *ngIf="showDemoModal" class="demo-modal-overlay" (click)="closeDemoVideo()">
   <div class="demo-modal" (click)="$event.stopPropagation()">
     <!-- Enhanced Header -->
-    <div class="demo-modal-header">
+    <div class="demo-modal-header   ">
       <div class="header-content">
         <div class="video-icon">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

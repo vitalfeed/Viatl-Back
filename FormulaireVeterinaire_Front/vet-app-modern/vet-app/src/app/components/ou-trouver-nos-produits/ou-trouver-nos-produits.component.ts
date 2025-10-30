@@ -130,7 +130,7 @@ export class OuTrouverNosProduitsComponent implements OnInit, AfterViewInit {
             <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">${location.name}</h3>
             <p style="margin: 4px 0; font-size: 12px;">📍 ${location.address}, ${location.city}</p>
             <p style="margin: 4px 0; font-size: 12px;">📞 ${location.phone}</p>
-            ${location.featured ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">⭐ Boutique Principale</span>' : ''}
+            ${location.featured ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">⭐ Cabinet Principal</span>' : ''}
           </div>
         `);
 
@@ -185,8 +185,8 @@ export class OuTrouverNosProduitsComponent implements OnInit, AfterViewInit {
       this.filteredLocations = this.locations;
     } else if (filter === 'featured') {
       this.filteredLocations = this.locations.filter(loc => loc.featured);
-    } else if (filter === 'BOUTIQUE') {
-      this.filteredLocations = this.locations.filter(loc => loc.type === 'BOUTIQUE');
+    } else if (filter === 'CABINET') {
+      this.filteredLocations = this.locations.filter(loc => loc.type === 'CABINET');
     } else if (filter === 'CABINET') {
       this.filteredLocations = this.locations.filter(loc => loc.type === 'CABINET');
     } else {
@@ -346,7 +346,7 @@ export class OuTrouverNosProduitsComponent implements OnInit, AfterViewInit {
                 <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">${location.name}</h3>
                 <p style="margin: 4px 0; font-size: 12px;">📍 ${location.address}, ${location.city}</p>
                 <p style="margin: 4px 0; font-size: 12px;">📞 ${location.phone}</p>
-                ${location.featured ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">⭐ Boutique Principale</span>' : ''}
+                ${location.featured ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">⭐ Cabinet Principal</span>' : ''}
               </div>
             `);
           bounds.push([location.latitude, location.longitude]);

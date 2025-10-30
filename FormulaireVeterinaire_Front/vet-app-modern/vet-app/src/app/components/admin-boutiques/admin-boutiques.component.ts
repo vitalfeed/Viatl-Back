@@ -44,7 +44,7 @@ export class AdminBoutiquesComponent implements OnInit {
   showMapModal = false;
   private modalMap: any = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.loadBoutiques();
@@ -134,9 +134,9 @@ export class AdminBoutiquesComponent implements OnInit {
    */
   saveBoutique(): void {
     // Validation
-    if (!this.currentBoutique.name || !this.currentBoutique.address || 
-        !this.currentBoutique.city || !this.currentBoutique.phone || 
-        !this.currentBoutique.matricule) {
+    if (!this.currentBoutique.name || !this.currentBoutique.address ||
+      !this.currentBoutique.city || !this.currentBoutique.phone ||
+      !this.currentBoutique.matricule) {
       this.error = 'Veuillez remplir tous les champs obligatoires';
       return;
     }
@@ -144,7 +144,7 @@ export class AdminBoutiquesComponent implements OnInit {
     // Validate GPS coordinates are numbers
     const lat = Number(this.currentBoutique.latitude);
     const lng = Number(this.currentBoutique.longitude);
-    
+
     if (isNaN(lat) || isNaN(lng)) {
       this.error = '❌ Les coordonnées GPS doivent être des nombres valides (ex: 48.8566 pour la latitude, 2.3522 pour la longitude)';
       return;
@@ -185,20 +185,20 @@ export class AdminBoutiquesComponent implements OnInit {
           this.successMessage = 'Boutique ajoutée avec succès!';
           this.closeForm();
           this.loadBoutiques();
-          
+
           // Clear success message after 3 seconds
           setTimeout(() => this.successMessage = '', 3000);
         },
         error: (error) => {
           this.loading = false;
           console.error('Error adding boutique:', error);
-          
+
           // Handle specific error messages
           let errorMessage = 'Erreur lors de l\'ajout de la boutique';
-          
+
           if (error.status === 400) {
             const errorText = error.error?.message || error.error?.error || error.error || '';
-            
+
             // Check for matricule not found error
             if (errorText.includes('matricule') && errorText.includes('n\'existe pas')) {
               const matriculeMatch = errorText.match(/Le matricule ([^\s]+)/);
@@ -217,7 +217,7 @@ export class AdminBoutiquesComponent implements OnInit {
               errorMessage = errorText || errorMessage;
             }
           }
-          
+
           this.error = errorMessage;
         }
       });
@@ -228,7 +228,7 @@ export class AdminBoutiquesComponent implements OnInit {
    */
   updateBoutique(): void {
     const boutiqueData = { ...this.currentBoutique };
-    
+
     this.http.put<any>(`${environment.apiUrl}/cabinets/update/${this.currentBoutique.id}`, boutiqueData, this.getRequestOptions())
       .subscribe({
         next: (response) => {
@@ -237,23 +237,23 @@ export class AdminBoutiquesComponent implements OnInit {
           if (index !== -1) {
             this.boutiques[index] = { ...this.currentBoutique };
           }
-          
+
           this.loading = false;
           this.successMessage = 'Boutique modifiée avec succès!';
           this.closeForm();
-          
+
           setTimeout(() => this.successMessage = '', 3000);
         },
         error: (error) => {
           this.loading = false;
           console.error('Error updating boutique:', error);
-          
+
           // Handle specific error messages
           let errorMessage = 'Erreur lors de la modification de la boutique';
-          
+
           if (error.status === 400) {
             const errorText = error.error?.message || error.error?.error || error.error || '';
-            
+
             // Check for matricule not found error
             if (errorText.includes('matricule') && errorText.includes('n\'existe pas')) {
               const matriculeMatch = errorText.match(/Le matricule ([^\s]+)/);
@@ -272,7 +272,7 @@ export class AdminBoutiquesComponent implements OnInit {
               errorMessage = errorText || errorMessage;
             }
           }
-          
+
           this.error = errorMessage;
         }
       });
@@ -314,11 +314,11 @@ export class AdminBoutiquesComponent implements OnInit {
         next: (response) => {
           // Immediately remove from local array for instant UI update
           this.boutiques = this.boutiques.filter(b => b.id !== deletedId);
-          
+
           this.loading = false;
           this.successMessage = 'Boutique supprimée avec succès!';
           this.closeDeleteModal();
-          
+
           setTimeout(() => this.successMessage = '', 3000);
         },
         error: (error) => {
@@ -382,7 +382,7 @@ export class AdminBoutiquesComponent implements OnInit {
     setTimeout(() => {
       if (!this.modalMap && typeof window !== 'undefined' && (window as any).L) {
         const L = (window as any).L;
-        
+
         this.modalMap = L.map('adminModalMap').setView([36.8, 10.2], 10);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

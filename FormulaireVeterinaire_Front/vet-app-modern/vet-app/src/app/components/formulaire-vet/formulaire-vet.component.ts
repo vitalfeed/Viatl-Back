@@ -170,4 +170,8 @@ export class FormulaireVetComponent implements OnInit {
     this.imagePreview = null;
     this.subscriptionForm.patchValue({ image: null });
   }
+
+  goBack(): void {
+    this.router.navigate(['/espace-veterinaire']);
+  }
 }

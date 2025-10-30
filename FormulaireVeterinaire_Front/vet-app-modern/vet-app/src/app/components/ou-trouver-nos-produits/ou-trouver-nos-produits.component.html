@@ -20,7 +20,7 @@
       </p>
     </div>
     
-    <!-- Boutique Presentation -->
+    <!-- Cabinet Presentation -->
     <div class="boutique-presentation">
       <div class="presentation-grid">
         <div class="presentation-content">
@@ -56,7 +56,7 @@
         <div class="presentation-visual">
           <div class="visual-card">
             <div class="visual-header">
-              <h3>🌟 Expérience Boutique</h3>
+              <h3>🌟 Expérience Cabinet</h3>
             </div>
             <div class="visual-content">
               <div class="stat-item">
@@ -84,7 +84,7 @@
             <div class="map-header">
               <div class="map-header-content">
                 <h3 class="map-title">Carte Interactive</h3>
-                <p class="map-subtitle">{{ filteredLocations.length }} boutique(s) avec marqueurs</p>
+                <p class="map-subtitle">{{ filteredLocations.length }} cabinet(s) avec marqueurs</p>
               </div>
               <button class="maximize-btn" (click)="maximizeMap()" title="Agrandir la carte">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@
                 <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="text-center"><strong>{{ filteredLocations.length }} boutique(s) affichée(s) sur la carte.</strong> Cliquez sur les marqueurs pour voir les détails de chaque boutique.</span>
+                <span class="text-center"><strong>{{ filteredLocations.length }} cabinet(s) affiché(s) sur la carte.</strong> Cliquez sur les marqueurs pour voir les détails de chaque cabinet.</span>
               </div>
             </div>
             
@@ -112,10 +112,10 @@
         <!-- Locations List -->
         <div class="locations-container">
           <div class="locations-header">
-            <h3 class="locations-title">Nos Boutiques ({{ filteredLocations.length }})</h3>
+            <h3 class="locations-title">Nos Cabinets ({{ filteredLocations.length }})</h3>
             <div class="filter-buttons">
               <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterLocations('all')">Tous</button>
-              <button class="filter-btn" [class.active]="selectedFilter === 'BOUTIQUE'" (click)="filterLocations('BOUTIQUE')">Boutiques</button>
+              <button class="filter-btn" [class.active]="selectedFilter === 'CABINET'" (click)="filterLocations('CABINET')">Cabinets</button>
             </div>
           </div>
           
@@ -148,7 +148,7 @@
             <!-- Location Cards -->
             <div *ngFor="let location of paginatedLocations" class="location-card" [class.featured]="location.featured">
               <div class="location-badge">
-                {{ location.featured ? '⭐ Boutique Principale' : (location.type === 'BOUTIQUE' ? '🏪 Boutique' : '🏥 Cabinet') }}
+                {{ location.featured ? '⭐ Cabinet Principal' : '🏥 Cabinet' }}
               </div>
               <h4 class="location-name">{{ location.name }}</h4>
               <div class="location-details">

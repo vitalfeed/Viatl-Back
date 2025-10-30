@@ -33,12 +33,19 @@ export class AuthService {
 
   /**
    * Watch for navigation changes and clear auth when moving to public pages
+   * BUT: Don't clear auth when going to formulaireVet (user can be logged in)
    */
   private initNavigationWatcher(): void {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       const currentUrl = event.urlAfterRedirects || event.url;
+      const cleanUrl = currentUrl.split('?')[0].split('#')[0];
+      
+      // Don't clear auth for formulaireVet - users can be logged in
+      if (cleanUrl.startsWith('/formulaireVet')) {
+        return;
+      }
       
       // Check if navigating to a public route
       if (this.isPublicRoute(currentUrl)) {
