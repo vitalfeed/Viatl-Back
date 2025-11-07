@@ -16,7 +16,7 @@ RUN ./mvnw dependency:go-offline -B
 COPY src ./src
 
 # Build
-RUN ./mvnw clean package -DskipTests
+RUN chmod ./mvnw clean package -DskipTests
 
 # Expose app port
 EXPOSE 8080
