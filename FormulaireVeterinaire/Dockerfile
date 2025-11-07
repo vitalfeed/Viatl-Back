@@ -12,20 +12,19 @@ COPY pom.xml .
 # Make mvnw executable
 RUN chmod +x mvnw
 
-# Pre-download dependencies (cache)
+# Pre-download dependencies
 RUN ./mvnw dependency:go-offline -B
 
-# Copy source code (all of it)
+# Copy source code
 COPY src ./src
 
-# Build the application (produces target/*.jar)
-RUN ./mvnw clean package -DskipTests
+# Build and show what was created
+RUN ./mvnw clean package -DskipTests && \
+    echo "=== JAR built successfully ===" && \
+    ls -la target/*.jar
 
-# Optional: verify JAR exists
-RUN ls -l target/
-
-# Expose port
+# Expose app port
 EXPOSE 8080
 
-# Run the built JAR (replace with your actual JAR name)
-CMD ["java", "-jar", "target/formulaireveterinaire-0.0.1-SNAPSHOT.jar"]
+# Run the JAR (dynamically)
+CMD ["sh", "-c", "exec java -jar target/*.jar"]
