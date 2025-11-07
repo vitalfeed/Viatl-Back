@@ -15,14 +15,17 @@ RUN chmod +x mvnw
 # Pre-download dependencies (cache)
 RUN ./mvnw dependency:go-offline -B
 
-# Copy source code
+# Copy source code (all of it)
 COPY src ./src
 
-# Build the application (skip tests to speed up)
+# Build the application (produces target/*.jar)
 RUN ./mvnw clean package -DskipTests
 
-# Expose app port
+# Optional: verify JAR exists
+RUN ls -l target/
+
+# Expose port
 EXPOSE 8080
 
-# Run the jar
-CMD ["java", "-jar", "target/*.jar"]
+# Run the built JAR (replace with your actual JAR name)
+CMD ["java", "-jar", "target/formulaireveterinaire-0.0.1-SNAPSHOT.jar"]
