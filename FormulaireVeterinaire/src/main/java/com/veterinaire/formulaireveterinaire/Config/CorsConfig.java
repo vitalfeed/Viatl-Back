@@ -14,8 +14,8 @@ public class CorsConfig {
                 registry.addMapping("/api/**")
                         //.allowedOrigins("http://localhost:4200") // Angular dev server
                         .allowedOriginPatterns(
-                                "http://localhost:4200",
-                                "https://viatl-back.onrender.com"  // Allows your frontend on Render
+                                "https://localhost:4200",
+                                //"https://viatl-back.onrender.com"  // Allows your frontend on Render
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
