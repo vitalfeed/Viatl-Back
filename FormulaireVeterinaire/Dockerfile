@@ -1,18 +1,25 @@
-
+# Use a stable JDK base image
 FROM eclipse-temurin:21-jdk
 
 # Set working directory
 WORKDIR /app
 
-# Copy the Maven files
+# Copy Maven wrapper and pom.xml
+COPY mvnw .
+COPY .mvn .mvn
 COPY pom.xml .
+
+# Pre-download dependencies (cache)
+RUN ./mvnw dependency:go-offline -B
+
+# Copy source code
 COPY src ./src
 
-# Package the app
+# Build
 RUN ./mvnw clean package -DskipTests
 
-# Expose the port used by your Spring Boot app
+# Expose app port
 EXPOSE 8080
 
-# Run the JAR file
+# Run jar
 CMD ["java", "-jar", "target/*.jar"]
