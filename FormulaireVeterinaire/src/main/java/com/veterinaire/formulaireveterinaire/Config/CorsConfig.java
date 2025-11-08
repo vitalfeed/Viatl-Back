@@ -13,7 +13,10 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         //.allowedOrigins("http://localhost:4200") // Angular dev server
-                        .allowedOriginPatterns("https://localhost:4200")
+                        configuration.setAllowedOriginPatterns(List.of(
+                                "http://localhost:4200",
+                                "https://localhost:4200"
+                        ));
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true); // Autorise les cookies/tokens
