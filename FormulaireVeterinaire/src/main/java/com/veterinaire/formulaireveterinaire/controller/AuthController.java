@@ -39,10 +39,10 @@ public class AuthController {
             // Create cookie for JWT
             ResponseCookie cookie = ResponseCookie.from("access_token", token)
                     .httpOnly(true)
-                    .secure(false) // ❌ false for localhost (http), ✅ true in production
+                    .secure(false) // keep false for localhost (no HTTPS)
                     .path("/")
-                    .maxAge(60 * 60 * 24 * 7) // 7 days
-                    .sameSite("Lax") // allow localhost:4200 → localhost:8061
+                    .maxAge(60 * 60 * 24 * 7)
+                    .sameSite("None") // ✅ required for cross-origin (localhost:4200 → localhost:8061)
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
