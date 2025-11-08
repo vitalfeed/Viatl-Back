@@ -37,13 +37,14 @@ public class AuthController {
             boolean isAdmin = (boolean) authResult.get("isAdmin");
 
             // Create cookie for JWT
-            ResponseCookie cookie = ResponseCookie.from("access_token", token)
+           ResponseCookie cookie = ResponseCookie.from("access_token", token)
                     .httpOnly(true)
-                    .secure(false) // keep false for localhost (no HTTPS)
+                    .secure(true)  // ✅ MUST be true for SameSite=None
                     .path("/")
                     .maxAge(60 * 60 * 24 * 7)
-                    .sameSite("None") // ✅ required for cross-origin (localhost:4200 → localhost:8061)
+                    .sameSite("None")
                     .build();
+
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
