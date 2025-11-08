@@ -28,19 +28,24 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
+    private final CorsConfigurationSource corsConfigurationSource; 
 
+    
     public SecurityConfig(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService,
-                          SubscriptionRepository subscriptionRepository, UserRepository userRepository) {
+                          SubscriptionRepository subscriptionRepository, UserRepository userRepository,CorsConfigurationSource corsConfigurationSource) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
         this.subscriptionRepository = subscriptionRepository;
         this.userRepository = userRepository;
+        this.corsConfigurationSource = corsConfigurationSource;
+
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource)) // use CorsConfig bean
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/login", "/api/logout" ,"/api/users/register").permitAll()
