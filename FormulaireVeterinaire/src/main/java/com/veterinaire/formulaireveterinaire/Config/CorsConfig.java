@@ -12,7 +12,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins("http://localhost:4200", "https://vercelfront.vercel.app/") // Angular dev server
+                        .allowedOrigins("https://vercelfront-8zw2nbsvs-vital-feeds-projects.vercel.app", "https://vercelfront.vercel.app/") // Angular dev server
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true); // Autorise les cookies/tokens
